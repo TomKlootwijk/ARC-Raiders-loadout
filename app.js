@@ -745,16 +745,32 @@ async function fetchAllItems() {
   let offset = 0;
   const limit = 45;
   const all = [];
+  const seenIds = new Set();
+
   while (true) {
     const url = `${LIVE_API_BASE}?full=true&offset=${offset}&limit=${limit}`;
     const response = await fetch(url, { mode: 'cors' });
     if (!response.ok) throw new Error(`Catalog request failed at offset ${offset}`);
     const payload = await response.json();
     const pageItems = Array.isArray(payload.items) ? payload.items : [];
-    all.push(...pageItems);
-    if (!pageItems.length || pageItems.length < limit || !payload.next) break;
-    offset += limit;
+
+    pageItems.forEach((item) => {
+      if (!item?.id || seenIds.has(item.id)) return;
+      seenIds.add(item.id);
+      all.push(item);
+    });
+
+    const total = Number(payload.total || 0);
+    const hitTotal = total > 0 && all.length >= total;
+    const shortPage = pageItems.length < limit;
+    const nextOffset = offset + limit;
+
+    if (!pageItems.length || shortPage || hitTotal) break;
+    if (!payload.next && total === 0 && nextOffset > offset + pageItems.length) break;
+
+    offset = nextOffset;
   }
+
   return all;
 }
 
@@ -1552,12 +1568,26 @@ function selectorGroupForItem(context, item) {
 }
 
 function isWeapon(item) {
+  if (!item || isShield(item) || isAugmentItem(item)) return false;
+  if (item.isWeapon || item.raw?.isWeapon) return true;
+
   const typeText = `${item.type} ${item.raw?.weaponClass || ''}`.toLowerCase();
-  if (isAttachment(item) || isShield(item) || isAugmentItem(item)) return false;
-  if (item.raw?.ammoType || item.raw?.magazineSize || item.raw?.weaponStats) return true;
+  const effectsText = Object.keys(item.raw?.effects || {}).join(' ').toLowerCase();
+  const hasWeaponStats = Boolean(
+    item.raw?.ammoType
+    || item.raw?.magazineSize
+    || item.raw?.weaponStats
+    || item.raw?.modSlots
+    || item.attachmentSlots?.length
+    || effectsText.includes('ammo type')
+    || effectsText.includes('magazine size')
+  );
+  if (hasWeaponStats) return true;
+  if (isAttachment(item)) return false;
   return [
     'assault rifle',
     'battle rifle',
+    'break-action rifle',
     'hand cannon',
     'pistol',
     'smg',
@@ -1565,9 +1595,12 @@ function isWeapon(item) {
     'shotgun',
     'marksman',
     'machine gun',
+    'light machinegun',
     'carbine',
     'special weapon',
+    'special',
     'weapon',
+    'energy beam gun',
   ].some((keyword) => typeText.includes(keyword));
 }
 
@@ -1600,6 +1633,9 @@ function isAugmentItem(item) {
 }
 
 function isAttachment(item) {
+  if (!item || item.isWeapon || item.raw?.isWeapon || item.attachmentSlots?.length || item.raw?.modSlots) {
+    return false;
+  }
   return Boolean(inferAttachmentCategory(item));
 }
 
@@ -1801,12 +1837,13 @@ function buildCraftPlan(selections) {
     map.set(itemId, (map.get(itemId) || 0) + qty);
   };
 
-  const visit = (itemId, qty, mode = 'intermediate') => {
+  const visit = (itemId, qty, includeInCrafted = true) => {
     const item = getItem(itemId);
     if (!item) {
       addToMap(baseMap, itemId, qty);
       return { itemId, qty, bench: '', children: [], missing: true };
     }
+
     const recipe = normalizedRecipe(item);
     const node = {
       itemId,
@@ -1815,34 +1852,22 @@ function buildCraftPlan(selections) {
       children: [],
       missing: false,
     };
+
     if (!recipe.length) {
       addToMap(baseMap, itemId, qty);
       return node;
     }
-    if (mode === 'intermediate') addToMap(craftedMap, itemId, qty);
+
+    if (includeInCrafted) addToMap(craftedMap, itemId, qty);
     recipe.forEach(({ ingredientId, amount }) => {
-      node.children.push(visit(ingredientId, amount * qty, 'intermediate'));
+      node.children.push(visit(ingredientId, amount * qty, true));
     });
     return node;
   };
 
   selections.forEach((selection) => {
-    const item = getItem(selection.itemId);
-    const tree = {
-      label: selection.label,
-      itemId: selection.itemId,
-      qty: selection.qty,
-      bench: item ? craftBenchLabel(item) : '',
-      children: [],
-    };
-    const recipe = item ? normalizedRecipe(item) : [];
-    if (!recipe.length) {
-      addToMap(baseMap, selection.itemId, selection.qty);
-    } else {
-      recipe.forEach(({ ingredientId, amount }) => {
-        tree.children.push(visit(ingredientId, amount * selection.qty, 'intermediate'));
-      });
-    }
+    const tree = visit(selection.itemId, selection.qty, true);
+    tree.label = selection.label;
     trees.push(tree);
   });
 
@@ -1858,7 +1883,13 @@ function normalizedRecipe(item) {
   if (!recipe || typeof recipe !== 'object') return [];
   return Object.entries(recipe)
     .map(([ingredientId, amount]) => ({ ingredientId, amount: Number(amount) || 0 }))
-    .filter((entry) => entry.amount > 0);
+    .filter((entry) => entry.amount > 0 && !shouldIgnoreRecipeIngredient(entry.ingredientId));
+}
+
+function shouldIgnoreRecipeIngredient(ingredientId) {
+  const item = getItem(ingredientId);
+  const text = `${ingredientId || ''} ${item?.name || ''} ${item?.type || ''}`.toLowerCase();
+  return text.includes('blueprint');
 }
 
 function renderTokenList(container, list, className) {

@@ -286,13 +286,7 @@ button {
 }
 
 .board-bg {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(180deg, rgba(5, 12, 22, 0.24), rgba(5, 12, 22, 0.8)),
-    url('./assets/loadout-empty-reference.png') center center / cover no-repeat;
-  opacity: 0.55;
-  pointer-events: none;
+  display: none;
 }
 
 .column {
