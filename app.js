@@ -349,17 +349,66 @@ const RECIPE_OVERRIDES = {
   anvil_i: { mechanical_components: 5, simple_gun_parts: 6 },
   anvil_ii: { anvil_i: 1, mechanical_components: 3, simple_gun_parts: 1 },
   anvil_iii: { anvil_ii: 1, mechanical_components: 4, heavy_gun_parts: 1 },
+  anvil_iv: { anvil_iii: 1, mechanical_components: 4, heavy_gun_parts: 1 },
+  arpeggio_i: { mechanical_components: 6, simple_gun_parts: 6 },
+  arpeggio_ii: { arpeggio_i: 1, mechanical_components: 4, simple_gun_parts: 1 },
+  arpeggio_iii: { arpeggio_ii: 1, mechanical_components: 5, medium_gun_parts: 1 },
+  arpeggio_iv: { arpeggio_iii: 1, mechanical_components: 5, medium_gun_parts: 1 },
+  bobcat_i: { magnetic_accelerator: 1, light_gun_parts: 3, exodus_modules: 2 },
+  bobcat_ii: { bobcat_i: 1, advanced_mechanical_components: 2, light_gun_parts: 1 },
+  bobcat_iii: { bobcat_ii: 1, advanced_mechanical_components: 2, light_gun_parts: 3 },
+  bobcat_iv: { bobcat_iii: 1, advanced_mechanical_components: 2, light_gun_parts: 3 },
+  ferro_i: { metal_parts: 5, rubber_parts: 2 },
+  ferro_ii: { ferro_i: 1, metal_parts: 7 },
+  ferro_iii: { ferro_ii: 1, metal_parts: 9, simple_gun_parts: 1 },
+  ferro_iv: { ferro_iii: 1, mechanical_components: 1, simple_gun_parts: 1 },
+  hairpin_i: { metal_parts: 2, plastic_parts: 5 },
+  hairpin_ii: { hairpin_i: 1, metal_parts: 8 },
+  hairpin_iii: { hairpin_ii: 1, metal_parts: 9, simple_gun_parts: 1 },
+  hairpin_iv: { hairpin_iii: 1, mechanical_components: 1, simple_gun_parts: 1 },
+  hullcracker_i: { magnetic_accelerator: 1, heavy_gun_parts: 3, exodus_modules: 1 },
+  hullcracker_ii: { hullcracker_i: 1, advanced_mechanical_components: 1, heavy_gun_parts: 2 },
+  hullcracker_iii: { hullcracker_ii: 1, advanced_mechanical_components: 2, heavy_gun_parts: 1 },
+  hullcracker_iv: { hullcracker_iii: 1, advanced_mechanical_components: 2, heavy_gun_parts: 3 },
   il_toro_i: { mechanical_components: 5, simple_gun_parts: 6 },
   il_toro_ii: { il_toro_i: 1, mechanical_components: 3, simple_gun_parts: 1 },
   il_toro_iii: { il_toro_ii: 1, mechanical_components: 4, heavy_gun_parts: 1 },
+  il_toro_iv: { il_toro_iii: 1, mechanical_components: 4, heavy_gun_parts: 1 },
+  osprey_i: { advanced_mechanical_components: 2, medium_gun_parts: 3, wires: 7 },
+  osprey_ii: { osprey_i: 1, advanced_mechanical_components: 1, medium_gun_parts: 2 },
+  osprey_iii: { osprey_ii: 1, advanced_mechanical_components: 1, medium_gun_parts: 2 },
+  osprey_iv: { osprey_iii: 1, advanced_mechanical_components: 2, medium_gun_parts: 2 },
   rattler_i: { metal_parts: 16, rubber_parts: 12 },
   rattler_ii: { rattler_i: 1, metal_parts: 10, rubber_parts: 10 },
   rattler_iii: { rattler_ii: 1, mechanical_components: 3, simple_gun_parts: 1 },
+  rattler_iv: { rattler_iii: 1, mechanical_components: 3, simple_gun_parts: 1 },
   bettina_i: { advanced_mechanical_components: 3, heavy_gun_parts: 3, canister: 3 },
   bettina_ii: { bettina_i: 1, advanced_mechanical_components: 1, heavy_gun_parts: 2 },
   kettle_i: { metal_parts: 3, rubber_parts: 2 },
   kettle_ii: { kettle_i: 1, metal_parts: 6, rubber_parts: 6 },
+  kettle_iii: { kettle_ii: 1, metal_parts: 10, simple_gun_parts: 1 },
+  kettle_iv: { kettle_iii: 1, mechanical_components: 3, simple_gun_parts: 1 },
   venator_i: { advanced_mechanical_components: 2, medium_gun_parts: 3, magnet: 5 },
+  venator_ii: { venator_i: 1, advanced_mechanical_components: 1, medium_gun_parts: 2 },
+  venator_iii: { venator_ii: 1, advanced_mechanical_components: 1, medium_gun_parts: 2 },
+  venator_iv: { venator_iii: 1, advanced_mechanical_components: 2, medium_gun_parts: 2 },
+  renegade_i: { advanced_mechanical_components: 2, medium_gun_parts: 3, oil: 5 },
+  renegade_ii: { renegade_i: 1, advanced_mechanical_components: 1, medium_gun_parts: 2 },
+  renegade_iii: { renegade_ii: 1, advanced_mechanical_components: 1, medium_gun_parts: 2 },
+  renegade_iv: { renegade_iii: 1, advanced_mechanical_components: 2, medium_gun_parts: 2 },
+  tempest_i: { magnetic_accelerator: 1, medium_gun_parts: 3, exodus_modules: 2 },
+  tempest_ii: { tempest_i: 1, advanced_mechanical_components: 2, medium_gun_parts: 1 },
+  tempest_iii: { tempest_ii: 1, advanced_mechanical_components: 2, medium_gun_parts: 3 },
+  tempest_iv: { tempest_iii: 1, advanced_mechanical_components: 2, medium_gun_parts: 3 },
+  torrente_i: { advanced_mechanical_components: 2, medium_gun_parts: 3, steel_spring: 6 },
+  torrente_ii: { torrente_i: 1, advanced_mechanical_components: 1, medium_gun_parts: 2 },
+  torrente_iii: { torrente_ii: 1, advanced_mechanical_components: 1, medium_gun_parts: 2 },
+  torrente_iv: { torrente_iii: 1, advanced_mechanical_components: 2, medium_gun_parts: 2 },
+  vulcano_i: { magnetic_accelerator: 1, heavy_gun_parts: 3, exodus_modules: 1 },
+  vulcano_ii: { vulcano_i: 1, advanced_mechanical_components: 1, heavy_gun_parts: 1 },
+  vulcano_iii: { vulcano_ii: 1, advanced_mechanical_components: 2, heavy_gun_parts: 1 },
+  vulcano_iv: { vulcano_iii: 1, advanced_mechanical_components: 2, heavy_gun_parts: 3 },
+  aphelion_i: { magnetic_accelerator: 3, complex_gun_parts: 3, matriarch_reactor: 1 },
   compensator_i: { metal_parts: 6, wires: 1 },
   muzzle_brake_i: { metal_parts: 6, wires: 1 },
   compensator_ii: { mechanical_components: 2, wires: 4 },
@@ -410,6 +459,59 @@ const state = {
 };
 
 const ROMAN_TIER_MAP = { i: 1, ii: 2, iii: 3, iv: 4, v: 5, vi: 6 };
+
+const WEAPON_CLASS_TERMS = [
+  'weapon',
+  'assault rifle',
+  'battle rifle',
+  'break-action rifle',
+  'hand cannon',
+  'pistol',
+  'submachine gun',
+  'smg',
+  'sniper rifle',
+  'shotgun',
+  'light machine gun',
+  'lmg',
+  'special weapon',
+  'launcher',
+  'marksman rifle',
+];
+
+const NON_WEAPON_SLOT_TERMS = [
+  'material',
+  'component',
+  'components',
+  'part',
+  'parts',
+  'ammo',
+  'blueprint',
+  'grenade',
+  'healing',
+  'quick use',
+  'utility',
+  'trap',
+  'trinket',
+  'consumable',
+  'augment',
+  'shield recharger',
+  'shield',
+  'attachment',
+  'weapon mod',
+  'modification',
+  'muzzle',
+  'underbarrel',
+  'magazine',
+  'stock',
+  'optic',
+  'scope',
+  'sight',
+  'converter',
+  'battery',
+  'module',
+  'reactor',
+  'tool',
+];
 
 function canonicalLookupPool() {
   const pools = [];
@@ -551,6 +653,11 @@ function buildSeedData() {
     makeItem('voltage_converter', 'Voltage Converter', 'Material', { weight: 0.25, value: 850 }),
     makeItem('power_rod', 'Power Rod', 'Material', { weight: 1.0, value: 5000, recipe: { advanced_electrical_components: 2, arc_circuitry: 2 } }),
     makeItem('canister', 'Canister', 'Material', { weight: 0.35, value: 100 }),
+    makeItem('oil', 'Oil', 'Material', { weight: 0.25, value: 180 }),
+    makeItem('rope', 'Rope', 'Material', { weight: 0.3, value: 150 }),
+    makeItem('magnetic_accelerator', 'Magnetic Accelerator', 'Material', { weight: 0.7, value: 3200 }),
+    makeItem('exodus_modules', 'Exodus Modules', 'Material', { weight: 0.6, value: 2500 }),
+    makeItem('matriarch_reactor', 'Matriarch Reactor', 'Material', { weight: 1.2, value: 6000 }),
     makeItem('simple_gun_parts', 'Simple Gun Parts', 'Material', { weight: 0.25, value: 18 }),
     makeItem('heavy_gun_parts', 'Heavy Gun Parts', 'Material', { weight: 0.45, value: 80, recipe: { simple_gun_parts: 4 } }),
     makeItem('mechanical_components', 'Mechanical Components', 'Material', {
@@ -1732,10 +1839,10 @@ function getAllowedItemsForContext(context) {
       return state.items.filter((item) => isShield(item) && isShieldCompatible(item, allowedTiers));
     }
     case 'weapon':
-      return state.items.filter((item) => isWeapon(item));
+      return state.items.filter((item) => isSelectableWeaponSlotItem(item));
     case 'attachment': {
       const weapon = getItem(state.currentLoadout.weapons[context.index]?.itemId);
-      return state.items.filter((item) => isAttachmentCompatible(item, weapon, context.attachmentKind));
+      return state.items.filter((item) => isSelectableAttachmentSlotItem(item) && isAttachmentCompatible(item, weapon, context.attachmentKind));
     }
     case 'quick':
       return state.items.filter((item) => isQuickUseEligible(item));
@@ -1756,6 +1863,51 @@ function selectorGroupForItem(context, item) {
   if (context.kind === 'shield') return shieldTier(item) || 'Shield';
   if (context.kind === 'augmented') return item.type || 'Item';
   return item.type || 'Item';
+}
+
+function looksLikeWeaponClass(text = '') {
+  return WEAPON_CLASS_TERMS.some((term) => text.includes(term));
+}
+
+function looksExplicitlyNonWeapon(text = '') {
+  return NON_WEAPON_SLOT_TERMS.some((term) => text.includes(term));
+}
+
+function isSelectableWeaponSlotItem(item) {
+  if (!item || isBlueprint(item) || isAugmentItem(item) || isShield(item)) return false;
+  if (isAttachment(item)) return false;
+  const typeText = itemTypeText(item);
+  const metaText = itemMetadataText(item);
+  const knownProfile = hasKnownWeaponProfile(item);
+  const classHint = looksLikeWeaponClass(typeText) || /\b(assault rifle|battle rifle|break-action rifle|hand cannon|pistol|submachine gun|smg|sniper rifle|shotgun|light machine ?gun|lmg|launcher|marksman rifle)\b/.test(metaText);
+  const raw = item.raw || {};
+  const statsHint = Boolean(
+    item.isWeapon
+    || raw.isWeapon
+    || raw.ammoType
+    || raw.magazineSize
+    || raw.weaponStats
+    || raw.damage
+    || raw.fireRate
+    || raw.firingMode
+    || raw.weaponClass
+    || item.attachmentSlots?.length
+    || raw.modSlots
+  );
+  if (!(knownProfile || classHint || statsHint)) return false;
+  if (!knownProfile && looksExplicitlyNonWeapon(typeText) && !statsHint) return false;
+  return true;
+}
+
+function isSelectableAttachmentSlotItem(item) {
+  if (!item || isBlueprint(item) || isAugmentItem(item) || isShield(item)) return false;
+  if (!isAttachment(item)) return false;
+  const category = inferAttachmentCategory(item);
+  if (!category) return false;
+  const text = `${item.type || ''} ${item.name || ''} ${item.description || ''}`.toLowerCase();
+  const raw = item.raw || {};
+  const explicitAttachmentMetadata = Boolean(item.attachmentCategory || raw.attachmentCategory || raw.modCategory || raw.slotCategory || raw.modSlot || raw.modType || raw.compatibleWeapons || raw.compatibility);
+  return explicitAttachmentMetadata || hasAttachmentTypeHint(item) || hasAttachmentNameHint(item) || /(mod|modification|attachment)/.test(text);
 }
 
 function isBlueprint(item) {
@@ -1828,11 +1980,12 @@ function weaponFamilyLabel(item) {
 
 function isWeapon(item) {
   if (!item || isShield(item) || isAugmentItem(item) || isBlueprint(item)) return false;
+  if (isAttachment(item)) return false;
 
   const raw = item.raw || {};
   const text = itemMetadataText(item);
   const typeText = itemTypeText(item);
-  const hasWeaponClassHint = /\b(weapon|assault rifle|battle rifle|break-action rifle|hand cannon|pistol|submachine gun|smg|sniper rifle|shotgun|light machine ?gun|lmg|launcher)\b/.test(typeText);
+  const hasWeaponClassHint = looksLikeWeaponClass(typeText) || /\b(assault rifle|battle rifle|break-action rifle|hand cannon|pistol|submachine gun|smg|sniper rifle|shotgun|light machine ?gun|lmg|launcher|marksman rifle)\b/.test(text) || hasKnownWeaponProfile(item);
   const hasWeaponStats = Boolean(
     item.isWeapon
     || raw.isWeapon
@@ -1848,15 +2001,12 @@ function isWeapon(item) {
     || raw.type === 'Weapon'
     || raw.modSlots
     || item.attachmentSlots?.length
-    || /\buses (light|medium|heavy|shotgun) ammo\b/.test(text)
-    || /\benergy clip\b/.test(text)
+    || /uses (light|medium|heavy|shotgun) ammo/.test(text)
+    || /energy clip/.test(text)
   );
-  const explicitAttachmentMarker = Boolean(item.attachmentCategory || raw.attachmentCategory || raw.modCategory || raw.slotCategory || raw.modSlot || raw.modType || hasAttachmentTypeHint(item) || hasAttachmentNameHint(item));
-  if (explicitAttachmentMarker && !hasWeaponClassHint && !hasWeaponStats) return false;
-
-  const explicitNonWeaponMarker = /\b(material|component|components|part|parts|ammo|blueprint|grenade|healing|quick use|utility|trap|trinket|consumable|augment|shield recharger|attachment|weapon mod|modification|muzzle|underbarrel|magazine|stock|optic|scope|sight)\b/.test(text);
-  if (explicitNonWeaponMarker && !hasWeaponStats && !hasWeaponClassHint && !hasKnownWeaponProfile(item)) return false;
-  return Boolean(hasKnownWeaponProfile(item) || hasWeaponStats || hasWeaponClassHint);
+  if (!(hasKnownWeaponProfile(item) || hasWeaponStats || hasWeaponClassHint)) return false;
+  if (!hasWeaponStats && !hasKnownWeaponProfile(item) && looksExplicitlyNonWeapon(typeText)) return false;
+  return true;
 }
 
 function isShield(item) {
@@ -1889,10 +2039,12 @@ function isAugmentItem(item) {
 
 function isAttachment(item) {
   if (!item || isBlueprint(item) || isAugmentItem(item) || isShield(item)) return false;
-  if (item.isWeapon || item.raw?.isWeapon || (isWeapon(item) && !item.attachmentCategory && !item.raw?.attachmentCategory)) {
+  const raw = item.raw || {};
+  const typeText = itemTypeText(item);
+  if (item.isWeapon || raw.isWeapon || looksLikeWeaponClass(typeText)) {
     return false;
   }
-  const hasAttachmentMetadata = Boolean(item.attachmentCategory || item.raw?.attachmentCategory || item.raw?.modCategory || item.raw?.slotCategory || item.raw?.modSlot || item.raw?.modType);
+  const hasAttachmentMetadata = Boolean(item.attachmentCategory || raw.attachmentCategory || raw.modCategory || raw.slotCategory || raw.modSlot || raw.modType || raw.compatibleWeapons || raw.compatibility || raw.compatibleWith);
   if (!hasAttachmentMetadata && !hasAttachmentTypeHint(item) && !hasAttachmentNameHint(item)) {
     return false;
   }
@@ -2107,6 +2259,11 @@ function getAllSelections(loadout, augment) {
   return selections;
 }
 
+function craftedStageLabel(depth) {
+  if (!Number.isFinite(depth) || depth <= 1) return 'Stage 1 crafted';
+  return `Stage ${depth} crafted`;
+}
+
 function renderCraftSummary() {
   const augment = augmentMap[state.currentLoadout.augmentId] || AUGMENTS[0];
   const selections = getAllSelections(state.currentLoadout, augment);
@@ -2131,15 +2288,22 @@ function buildCraftPlan(selections) {
   const trees = [];
   const finalSelectionIds = new Set(selections.map((selection) => selection.itemId).filter(Boolean));
 
-  const addToMap = (map, itemId, qty) => {
-    map.set(itemId, (map.get(itemId) || 0) + qty);
+  const addToMap = (map, itemId, qty, meta = null) => {
+    const existing = map.get(itemId) || { qty: 0 };
+    const next = { ...existing, qty: (existing.qty || 0) + qty };
+    if (meta) {
+      if (Number.isFinite(meta.depth)) next.depth = Math.max(existing.depth || 0, meta.depth);
+      if (Number.isFinite(meta.directUses)) next.directUses = (existing.directUses || 0) + meta.directUses;
+      if (Number.isFinite(meta.totalUses)) next.totalUses = (existing.totalUses || 0) + meta.totalUses;
+    }
+    map.set(itemId, next);
   };
 
-  const visit = (itemId, qty, includeInCrafted = true) => {
+  const visit = (itemId, qty, includeInCrafted = true, depth = 0) => {
     const item = getItem(itemId);
     if (!item) {
       addToMap(baseMap, itemId, qty);
-      return { itemId, qty, bench: '', children: [], missing: true, craftCount: qty, outputQty: 1 };
+      return { itemId, qty, bench: '', children: [], missing: true, craftCount: qty, outputQty: 1, depth };
     }
 
     const recipe = normalizedRecipe(item);
@@ -2153,6 +2317,7 @@ function buildCraftPlan(selections) {
       missing: false,
       craftCount,
       outputQty,
+      depth,
     };
 
     if (!recipe.length) {
@@ -2160,24 +2325,33 @@ function buildCraftPlan(selections) {
       return node;
     }
 
-    if (includeInCrafted && isIntermediateCraftItem(item)) addToMap(craftedMap, itemId, craftCount);
+    if (includeInCrafted && isIntermediateCraftItem(item)) {
+      addToMap(craftedMap, itemId, craftCount, { depth, directUses: 1, totalUses: craftCount });
+    }
     recipe.forEach(({ ingredientId, amount }) => {
-      node.children.push(visit(ingredientId, amount * craftCount, true));
+      node.children.push(visit(ingredientId, amount * craftCount, true, depth + 1));
     });
     return node;
   };
 
   selections.forEach((selection) => {
-    const tree = visit(selection.itemId, selection.qty, false);
+    const tree = visit(selection.itemId, selection.qty, false, 0);
     tree.label = selection.label;
     trees.push(tree);
   });
 
-  const baseParts = sortedMapEntries(baseMap).map(([itemId, qty]) => ({ itemId, qty }));
+  const baseParts = sortedMapEntries(baseMap).map(([itemId, entry]) => ({ itemId, qty: entry.qty }));
   const craftedIntermediates = sortedMapEntries(craftedMap)
     .filter(([itemId]) => !finalSelectionIds.has(itemId))
     .filter(([itemId]) => isIntermediateCraftItem(getItem(itemId)))
-    .map(([itemId, qty]) => ({ itemId, qty }));
+    .map(([itemId, entry]) => ({
+      itemId,
+      qty: entry.qty,
+      depth: entry.depth || 1,
+      directUses: entry.directUses || 0,
+      totalUses: entry.totalUses || entry.qty,
+      note: craftedStageLabel(entry.depth || 1),
+    }));
   return { baseParts, craftedIntermediates, trees };
 }
 
@@ -2234,11 +2408,14 @@ function renderTokenList(container, list, className) {
     const item = getItem(entry.itemId);
     const chip = document.createElement('div');
     chip.className = className;
+    const subtitle = [item?.type || 'Unknown', entry.note, Number.isFinite(entry.directUses) && entry.directUses > 0 ? `${entry.directUses} recipe use${entry.directUses > 1 ? 's' : ''}` : '']
+      .filter(Boolean)
+      .join(' · ');
     chip.innerHTML = `
       <div class="token-art" style="background-image:url('${escapeAttribute(getItemArtUrl(item, 'token'))}')"></div>
       <div class="token-copy">
         <strong>${escapeHtml(item?.name || prettifyId(entry.itemId))} × ${entry.qty}</strong>
-        <small>${escapeHtml(item?.type || 'Unknown')}</small>
+        <small>${escapeHtml(subtitle)}</small>
       </div>
     `;
     container.appendChild(chip);
@@ -2414,8 +2591,14 @@ function getItem(itemId) {
 }
 
 function sortedMapEntries(map) {
+  const metric = (value) => {
+    if (typeof value === 'number') return value;
+    if (value && typeof value === 'object') return Number(value.qty || 0);
+    return 0;
+  };
   return [...map.entries()].sort((a, b) => {
-    if (b[1] !== a[1]) return b[1] - a[1];
+    const diff = metric(b[1]) - metric(a[1]);
+    if (diff !== 0) return diff;
     const aName = getItem(a[0])?.name || a[0];
     const bName = getItem(b[0])?.name || b[0];
     return aName.localeCompare(bName);
