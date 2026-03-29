@@ -309,6 +309,27 @@ const WEAPON_SLOT_OVERRIDES = {
   'aphelion': ['underbarrel', 'stock'],
 };
 
+const ITEM_CRAFT_OUTPUT_OVERRIDES = {
+  heavy_ammo: 10,
+  medium_ammo: 20,
+  light_ammo: 25,
+  shotgun_ammo: 5,
+};
+
+const BASE_ONLY_ITEM_IDS = new Set([
+  'arc_motion_core',
+  'exodus_modules',
+  'matriarch_reactor',
+  'queen_reactor',
+  'leaper_pulse_unit',
+  'sentinel_firing_core',
+  'bombardier_cell',
+  'bastion_cell',
+  'flow_controller',
+  'humdifier',
+  'humidifier',
+]);
+
 const RECIPE_OVERRIDES = {
   mechanical_components: { metal_parts: 7, rubber_parts: 3 },
   electrical_components: { plastic_parts: 8, rubber_parts: 4 },
@@ -319,6 +340,7 @@ const RECIPE_OVERRIDES = {
   light_gun_parts: { simple_gun_parts: 4 },
   complex_gun_parts: { light_gun_parts: 2, medium_gun_parts: 2, heavy_gun_parts: 2 },
   power_rod: { advanced_electrical_components: 2, arc_circuitry: 2 },
+  magnetic_accelerator: { advanced_mechanical_components: 2, arc_motion_core: 2 },
   heavy_shield: { power_rod: 1, voltage_converter: 2 },
   heavy_shield_i: { power_rod: 1, voltage_converter: 2 },
   medium_shield: { battery: 4, arc_circuitry: 1 },
@@ -342,17 +364,66 @@ const RECIPE_OVERRIDES = {
   anvil_i: { mechanical_components: 5, simple_gun_parts: 6 },
   anvil_ii: { anvil_i: 1, mechanical_components: 3, simple_gun_parts: 1 },
   anvil_iii: { anvil_ii: 1, mechanical_components: 4, heavy_gun_parts: 1 },
+  anvil_iv: { anvil_iii: 1, mechanical_components: 4, heavy_gun_parts: 1 },
+  arpeggio_i: { mechanical_components: 6, simple_gun_parts: 6 },
+  arpeggio_ii: { arpeggio_i: 1, mechanical_components: 4, simple_gun_parts: 1 },
+  arpeggio_iii: { arpeggio_ii: 1, mechanical_components: 5, medium_gun_parts: 1 },
+  arpeggio_iv: { arpeggio_iii: 1, mechanical_components: 5, medium_gun_parts: 1 },
+  bobcat_i: { magnetic_accelerator: 1, light_gun_parts: 3, exodus_modules: 2 },
+  bobcat_ii: { bobcat_i: 1, advanced_mechanical_components: 2, light_gun_parts: 1 },
+  bobcat_iii: { bobcat_ii: 1, advanced_mechanical_components: 2, light_gun_parts: 3 },
+  bobcat_iv: { bobcat_iii: 1, advanced_mechanical_components: 2, light_gun_parts: 3 },
+  ferro_i: { metal_parts: 5, rubber_parts: 2 },
+  ferro_ii: { ferro_i: 1, metal_parts: 7 },
+  ferro_iii: { ferro_ii: 1, metal_parts: 9, simple_gun_parts: 1 },
+  ferro_iv: { ferro_iii: 1, mechanical_components: 1, simple_gun_parts: 1 },
+  hairpin_i: { metal_parts: 2, plastic_parts: 5 },
+  hairpin_ii: { hairpin_i: 1, metal_parts: 8 },
+  hairpin_iii: { hairpin_ii: 1, metal_parts: 9, simple_gun_parts: 1 },
+  hairpin_iv: { hairpin_iii: 1, mechanical_components: 1, simple_gun_parts: 1 },
+  hullcracker_i: { magnetic_accelerator: 1, heavy_gun_parts: 3, exodus_modules: 1 },
+  hullcracker_ii: { hullcracker_i: 1, advanced_mechanical_components: 1, heavy_gun_parts: 2 },
+  hullcracker_iii: { hullcracker_ii: 1, advanced_mechanical_components: 2, heavy_gun_parts: 1 },
+  hullcracker_iv: { hullcracker_iii: 1, advanced_mechanical_components: 2, heavy_gun_parts: 3 },
   il_toro_i: { mechanical_components: 5, simple_gun_parts: 6 },
   il_toro_ii: { il_toro_i: 1, mechanical_components: 3, simple_gun_parts: 1 },
   il_toro_iii: { il_toro_ii: 1, mechanical_components: 4, heavy_gun_parts: 1 },
+  il_toro_iv: { il_toro_iii: 1, mechanical_components: 4, heavy_gun_parts: 1 },
+  osprey_i: { advanced_mechanical_components: 2, medium_gun_parts: 3, wires: 7 },
+  osprey_ii: { osprey_i: 1, advanced_mechanical_components: 1, medium_gun_parts: 2 },
+  osprey_iii: { osprey_ii: 1, advanced_mechanical_components: 1, medium_gun_parts: 2 },
+  osprey_iv: { osprey_iii: 1, advanced_mechanical_components: 2, medium_gun_parts: 2 },
   rattler_i: { metal_parts: 16, rubber_parts: 12 },
   rattler_ii: { rattler_i: 1, metal_parts: 10, rubber_parts: 10 },
   rattler_iii: { rattler_ii: 1, mechanical_components: 3, simple_gun_parts: 1 },
+  rattler_iv: { rattler_iii: 1, mechanical_components: 3, simple_gun_parts: 1 },
   bettina_i: { advanced_mechanical_components: 3, heavy_gun_parts: 3, canister: 3 },
   bettina_ii: { bettina_i: 1, advanced_mechanical_components: 1, heavy_gun_parts: 2 },
   kettle_i: { metal_parts: 3, rubber_parts: 2 },
   kettle_ii: { kettle_i: 1, metal_parts: 6, rubber_parts: 6 },
+  kettle_iii: { kettle_ii: 1, metal_parts: 10, simple_gun_parts: 1 },
+  kettle_iv: { kettle_iii: 1, mechanical_components: 3, simple_gun_parts: 1 },
   venator_i: { advanced_mechanical_components: 2, medium_gun_parts: 3, magnet: 5 },
+  venator_ii: { venator_i: 1, advanced_mechanical_components: 1, medium_gun_parts: 2 },
+  venator_iii: { venator_ii: 1, advanced_mechanical_components: 1, medium_gun_parts: 2 },
+  venator_iv: { venator_iii: 1, advanced_mechanical_components: 2, medium_gun_parts: 2 },
+  renegade_i: { advanced_mechanical_components: 2, medium_gun_parts: 3, oil: 5 },
+  renegade_ii: { renegade_i: 1, advanced_mechanical_components: 1, medium_gun_parts: 2 },
+  renegade_iii: { renegade_ii: 1, advanced_mechanical_components: 1, medium_gun_parts: 2 },
+  renegade_iv: { renegade_iii: 1, advanced_mechanical_components: 2, medium_gun_parts: 2 },
+  tempest_i: { magnetic_accelerator: 1, medium_gun_parts: 3, exodus_modules: 2 },
+  tempest_ii: { tempest_i: 1, advanced_mechanical_components: 2, medium_gun_parts: 1 },
+  tempest_iii: { tempest_ii: 1, advanced_mechanical_components: 2, medium_gun_parts: 3 },
+  tempest_iv: { tempest_iii: 1, advanced_mechanical_components: 2, medium_gun_parts: 3 },
+  torrente_i: { advanced_mechanical_components: 2, medium_gun_parts: 3, steel_spring: 6 },
+  torrente_ii: { torrente_i: 1, advanced_mechanical_components: 1, medium_gun_parts: 2 },
+  torrente_iii: { torrente_ii: 1, advanced_mechanical_components: 1, medium_gun_parts: 2 },
+  torrente_iv: { torrente_iii: 1, advanced_mechanical_components: 2, medium_gun_parts: 2 },
+  vulcano_i: { magnetic_accelerator: 1, heavy_gun_parts: 3, exodus_modules: 1 },
+  vulcano_ii: { vulcano_i: 1, advanced_mechanical_components: 1, heavy_gun_parts: 1 },
+  vulcano_iii: { vulcano_ii: 1, advanced_mechanical_components: 2, heavy_gun_parts: 1 },
+  vulcano_iv: { vulcano_iii: 1, advanced_mechanical_components: 2, heavy_gun_parts: 3 },
+  aphelion_i: { magnetic_accelerator: 3, complex_gun_parts: 3, matriarch_reactor: 1 },
   compensator_i: { metal_parts: 6, wires: 1 },
   muzzle_brake_i: { metal_parts: 6, wires: 1 },
   compensator_ii: { mechanical_components: 2, wires: 4 },
@@ -367,9 +438,22 @@ const RECIPE_OVERRIDES = {
   extended_shotgun_mag_i: { plastic_parts: 6, steel_spring: 1 },
   extended_shotgun_mag_ii: { mechanical_components: 2, steel_spring: 3 },
   stable_stock_ii: { mechanical_components: 2, duct_tape: 3 },
+  angled_grip_iii: { mod_components: 2, duct_tape: 5 },
+  vertical_grip_iii: { mod_components: 2, duct_tape: 5 },
+  horizontal_grip: { mod_components: 2, duct_tape: 5 },
   stable_stock_iii: { mod_components: 2, duct_tape: 5 },
+  padded_stock: { mod_components: 2, duct_tape: 5 },
   lightweight_stock: { mod_components: 2, duct_tape: 5 },
   extended_barrel: { mod_components: 2, wires: 8 },
+  compensator_iii: { mod_components: 2, wires: 8 },
+  muzzle_brake_iii: { mod_components: 2, wires: 8 },
+  shotgun_choke_iii: { mod_components: 2, wires: 8 },
+  shotgun_silencer: { mod_components: 2, wires: 8 },
+  silencer_ii: { mod_components: 2, wires: 8 },
+  silencer_iii: { mod_components: 2, wires: 8 },
+  extended_light_mag_iii: { mod_components: 2, steel_spring: 5 },
+  extended_medium_mag_iii: { mod_components: 2, steel_spring: 5 },
+  extended_shotgun_mag_iii: { mod_components: 2, steel_spring: 5 },
 };
 
 const SLOT_KIND_LABELS = {
@@ -402,6 +486,191 @@ const state = {
   overflowBin: [],
 };
 
+const ROMAN_TIER_MAP = { i: 1, ii: 2, iii: 3, iv: 4, v: 5, vi: 6 };
+
+const WEAPON_CLASS_TERMS = [
+  'weapon',
+  'assault rifle',
+  'battle rifle',
+  'break-action rifle',
+  'hand cannon',
+  'pistol',
+  'submachine gun',
+  'smg',
+  'sniper rifle',
+  'shotgun',
+  'light machine gun',
+  'lmg',
+  'special weapon',
+  'launcher',
+  'marksman rifle',
+];
+
+const NON_WEAPON_SLOT_TERMS = [
+  'material',
+  'component',
+  'components',
+  'part',
+  'parts',
+  'ammo',
+  'blueprint',
+  'grenade',
+  'healing',
+  'quick use',
+  'utility',
+  'trap',
+  'trinket',
+  'consumable',
+  'augment',
+  'shield recharger',
+  'shield',
+  'attachment',
+  'weapon mod',
+  'modification',
+  'muzzle',
+  'underbarrel',
+  'magazine',
+  'stock',
+  'optic',
+  'scope',
+  'sight',
+  'converter',
+  'battery',
+  'module',
+  'reactor',
+  'tool',
+];
+
+function canonicalLookupPool() {
+  const pools = [];
+  if (state?.items?.length) pools.push(...state.items);
+  pools.push(...seedData);
+  return pools;
+}
+
+function numberToRoman(value) {
+  const map = { 1: 'i', 2: 'ii', 3: 'iii', 4: 'iv', 5: 'v', 6: 'vi' };
+  return map[value] || '';
+}
+
+function normalizeRomanGlyphs(value) {
+  return String(value || '')
+    .replace(/Ⅰ/g, 'I')
+    .replace(/[Ⅱ]/g, 'II')
+    .replace(/[Ⅲ]/g, 'III')
+    .replace(/[Ⅳ]/g, 'IV')
+    .replace(/[Ⅴ]/g, 'V')
+    .replace(/[Ⅵ]/g, 'VI');
+}
+
+function normalizeLooseKey(value) {
+  const normalizedSource = normalizeRomanGlyphs(String(value || ''));
+  return slugify(normalizedSource)
+    .replace(/-/g, '_')
+    .replace(/\bmark\b/g, 'mk')
+    .replace(/_(\d)\b/g, (_, digit) => `_${numberToRoman(Number(digit)) || digit}`)
+    .replace(/\b(\d)\b/g, (_, digit) => numberToRoman(Number(digit)) || digit)
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
+}
+
+function parseTierToken(value) {
+  const token = normalizeRomanGlyphs(String(value || '')).trim().toLowerCase();
+  if (ROMAN_TIER_MAP[token]) return ROMAN_TIER_MAP[token];
+  const numeric = Number(token);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : null;
+}
+
+function inferSeriesInfo(item) {
+  if (!item) return null;
+  const sources = [item.id, item.name].filter(Boolean);
+  for (const source of sources) {
+    const text = normalizeRomanGlyphs(String(source).trim());
+    const match = text.match(/^(.*?)(?:[ _-]|\s+)(i{1,3}|iv|v|vi|[1-9])$/i);
+    if (!match) continue;
+    const family = normalizeLooseKey(match[1]);
+    const tier = parseTierToken(match[2]);
+    if (family && tier) return { family, tier };
+  }
+  return null;
+}
+
+function buildLooseCandidates(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return [];
+  const base = normalizeLooseKey(raw);
+  const out = new Set([raw, raw.toLowerCase(), base]);
+  const match = base.match(/^(.*?)(?:_|)(i{1,3}|iv|v|vi|[1-9])$/i);
+  if (match) {
+    const family = match[1].replace(/_+$/, '');
+    const tier = parseTierToken(match[2]);
+    if (family && tier) {
+      out.add(`${family}_${numberToRoman(tier)}`);
+      out.add(`${family}_${tier}`);
+      out.add(`${family} ${numberToRoman(tier)}`.trim());
+      out.add(`${family} ${tier}`.trim());
+    }
+  }
+  return [...out].filter(Boolean);
+}
+
+function resolveItemReference(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  const pools = canonicalLookupPool();
+  const candidates = buildLooseCandidates(raw);
+  for (const candidate of candidates) {
+    if (state.itemsById?.[candidate]) return candidate;
+    const exact = pools.find((item) => item.id === candidate || item.name === candidate);
+    if (exact) return exact.id;
+  }
+  const normalizedCandidates = new Set(candidates.map(normalizeLooseKey));
+  const fuzzy = pools.find((item) => normalizedCandidates.has(normalizeLooseKey(item.id)) || normalizedCandidates.has(normalizeLooseKey(item.name)));
+  return fuzzy?.id || normalizeLooseKey(raw) || raw;
+}
+
+function findPreviousTierItemId(item) {
+  const info = inferSeriesInfo(item);
+  if (!info || info.tier <= 1) return null;
+  const previousTier = info.tier - 1;
+  const candidates = [
+    `${info.family}_${numberToRoman(previousTier)}`,
+    `${info.family}_${previousTier}`,
+    `${info.family} ${numberToRoman(previousTier)}`,
+    `${info.family} ${previousTier}`,
+  ].filter(Boolean);
+  const pools = canonicalLookupPool();
+  for (const candidate of candidates) {
+    const resolved = resolveItemReference(candidate);
+    if (resolved && resolved !== item.id && pools.some((entry) => entry.id === resolved)) return resolved;
+  }
+  return null;
+}
+
+function inferCraftOutputQuantity(item) {
+  if (!item) return 1;
+  const raw = item.raw || {};
+  const directCandidates = [
+    raw.outputQuantity,
+    raw.craftOutputQuantity,
+    raw.outputQty,
+    raw.resultCount,
+    raw.resultQuantity,
+    raw.quantityProduced,
+  ];
+  for (const candidate of directCandidates) {
+    const numeric = Number(candidate || 0);
+    if (Number.isFinite(numeric) && numeric > 0) return numeric;
+  }
+  const normalizedId = normalizeLooseKey(item.id || item.name || '');
+  if (ITEM_CRAFT_OUTPUT_OVERRIDES[normalizedId]) return ITEM_CRAFT_OUTPUT_OVERRIDES[normalizedId];
+  if (normalizedId.includes('heavy_ammo')) return ITEM_CRAFT_OUTPUT_OVERRIDES.heavy_ammo;
+  if (normalizedId.includes('medium_ammo')) return ITEM_CRAFT_OUTPUT_OVERRIDES.medium_ammo;
+  if (normalizedId.includes('light_ammo')) return ITEM_CRAFT_OUTPUT_OVERRIDES.light_ammo;
+  if (normalizedId.includes('shotgun_ammo')) return ITEM_CRAFT_OUTPUT_OVERRIDES.shotgun_ammo;
+  return 1;
+}
+
 function buildSeedData() {
   const materials = [
     makeItem('metal_parts', 'Metal Parts', 'Material', { image: '', weight: 0.2, value: 8 }),
@@ -418,11 +687,17 @@ function buildSeedData() {
     makeItem('medium_gun_parts', 'Medium Gun Parts', 'Material', { weight: 0.35, value: 70, recipe: { simple_gun_parts: 4 } }),
     makeItem('complex_gun_parts', 'Complex Gun Parts', 'Material', { weight: 0.55, value: 130, recipe: { light_gun_parts: 2, medium_gun_parts: 2, heavy_gun_parts: 2 } }),
     makeItem('arc_alloy', 'ARC Alloy', 'Material', { weight: 0.2, value: 120 }),
+    makeItem('arc_motion_core', 'ARC Motion Core', 'Material', { weight: 0.7, value: 3000 }),
     makeItem('arc_circuitry', 'ARC Circuitry', 'Material', { weight: 0.3, value: 1000, recipe: { arc_alloy: 8 } }),
     makeItem('battery', 'Battery', 'Material', { weight: 0.2, value: 120 }),
     makeItem('voltage_converter', 'Voltage Converter', 'Material', { weight: 0.25, value: 850 }),
     makeItem('power_rod', 'Power Rod', 'Material', { weight: 1.0, value: 5000, recipe: { advanced_electrical_components: 2, arc_circuitry: 2 } }),
     makeItem('canister', 'Canister', 'Material', { weight: 0.35, value: 100 }),
+    makeItem('oil', 'Oil', 'Material', { weight: 0.25, value: 180 }),
+    makeItem('rope', 'Rope', 'Material', { weight: 0.3, value: 150 }),
+    makeItem('magnetic_accelerator', 'Magnetic Accelerator', 'Material', { weight: 0.7, value: 3200 }),
+    makeItem('exodus_modules', 'Exodus Modules', 'Material', { weight: 0.6, value: 2500 }),
+    makeItem('matriarch_reactor', 'Matriarch Reactor', 'Material', { weight: 1.2, value: 6000 }),
     makeItem('simple_gun_parts', 'Simple Gun Parts', 'Material', { weight: 0.25, value: 18 }),
     makeItem('heavy_gun_parts', 'Heavy Gun Parts', 'Material', { weight: 0.45, value: 80, recipe: { simple_gun_parts: 4 } }),
     makeItem('mechanical_components', 'Mechanical Components', 'Material', {
@@ -486,6 +761,18 @@ function buildSeedData() {
     makeItem('stable_stock_ii', 'Stable Stock II', 'Attachment', { weight: 0.45, value: 2000, attachmentCategory: 'stock', recipe: { mechanical_components: 2, duct_tape: 3 } }),
     makeItem('lightweight_stock', 'Lightweight Stock', 'Attachment', { weight: 0.55, value: 5000, attachmentCategory: 'stock', recipe: { mod_components: 2, duct_tape: 5 } }),
     makeItem('extended_barrel', 'Extended Barrel', 'Attachment', { weight: 0.55, value: 5000, attachmentCategory: 'muzzle', recipe: { mod_components: 2, wires: 8 } }),
+    makeItem('compensator_iii', 'Compensator III', 'Attachment', { weight: 0.5, value: 5000, attachmentCategory: 'muzzle', recipe: { mod_components: 2, wires: 8 } }),
+    makeItem('muzzle_brake_iii', 'Muzzle Brake III', 'Attachment', { weight: 0.5, value: 5000, attachmentCategory: 'muzzle', recipe: { mod_components: 2, wires: 8 } }),
+    makeItem('angled_grip_iii', 'Angled Grip III', 'Attachment', { weight: 0.45, value: 5000, attachmentCategory: 'underbarrel', recipe: { mod_components: 2, duct_tape: 5 } }),
+    makeItem('vertical_grip_iii', 'Vertical Grip III', 'Attachment', { weight: 0.45, value: 5000, attachmentCategory: 'underbarrel', recipe: { mod_components: 2, duct_tape: 5 } }),
+    makeItem('extended_light_mag_iii', 'Extended Light Mag III', 'Attachment', { weight: 0.35, value: 5000, attachmentCategory: 'light_magazine', recipe: { mod_components: 2, steel_spring: 5 } }),
+    makeItem('extended_medium_mag_iii', 'Extended Medium Mag III', 'Attachment', { weight: 0.35, value: 5000, attachmentCategory: 'medium_magazine', recipe: { mod_components: 2, steel_spring: 5 } }),
+    makeItem('extended_shotgun_mag_iii', 'Extended Shotgun Mag III', 'Attachment', { weight: 0.35, value: 5000, attachmentCategory: 'shotgun_magazine', recipe: { mod_components: 2, steel_spring: 5 } }),
+    makeItem('padded_stock', 'Padded Stock', 'Attachment', { weight: 0.45, value: 5000, attachmentCategory: 'stock', recipe: { mod_components: 2, duct_tape: 5 } }),
+    makeItem('shotgun_choke_iii', 'Shotgun Choke III', 'Attachment', { weight: 0.5, value: 5000, attachmentCategory: 'shotgun_muzzle', recipe: { mod_components: 2, wires: 8 } }),
+    makeItem('shotgun_silencer', 'Shotgun Silencer', 'Attachment', { weight: 0.5, value: 5000, attachmentCategory: 'shotgun_muzzle', recipe: { mod_components: 2, wires: 8 } }),
+    makeItem('silencer_ii', 'Silencer II', 'Attachment', { weight: 0.5, value: 5000, attachmentCategory: 'muzzle', recipe: { mod_components: 2, wires: 8 } }),
+    makeItem('silencer_iii', 'Silencer III', 'Attachment', { weight: 0.5, value: 5000, attachmentCategory: 'muzzle', recipe: { mod_components: 2, wires: 8 } }),
     makeItem('anvil_splitter', 'Anvil Splitter', 'Attachment', { weight: 0.4, value: 5000, attachmentCategory: 'tech' }),
   ];
 
@@ -943,7 +1230,8 @@ function normalizeRecipeShape(candidate) {
     candidate.forEach((entry) => {
       const key = entry?.itemId || entry?.id || entry?.item || entry?.material || entry?.name || entry?.slug;
       const qty = Number(entry?.qty ?? entry?.amount ?? entry?.count ?? entry?.value ?? 0);
-      if (key && qty > 0) out[String(key)] = qty;
+      const resolvedKey = resolveItemReference(key);
+      if (resolvedKey && qty > 0) out[String(resolvedKey)] = qty;
     });
     return Object.keys(out).length ? out : null;
   }
@@ -951,14 +1239,20 @@ function normalizeRecipeShape(candidate) {
     const keys = Object.keys(candidate);
     if (!keys.length) return null;
     if (keys.every((key) => typeof candidate[key] === 'number' || /^\d+(\.\d+)?$/.test(String(candidate[key])))) {
-      return candidate;
+      const resolved = {};
+      keys.forEach((key) => {
+        const resolvedKey = resolveItemReference(key);
+        if (!resolvedKey) return;
+        resolved[resolvedKey] = Number(candidate[key]);
+      });
+      return resolved;
     }
     const out = {};
     keys.forEach((key) => {
       const value = candidate[key];
       if (value && typeof value === 'object') {
         const qty = Number(value.qty ?? value.amount ?? value.count ?? value.value ?? 0);
-        const itemId = value.itemId || value.id || key;
+        const itemId = resolveItemReference(value.itemId || value.id || key);
         if (itemId && qty > 0) out[String(itemId)] = qty;
       }
     });
@@ -1597,10 +1891,10 @@ function getAllowedItemsForContext(context) {
       return state.items.filter((item) => isShield(item) && isShieldCompatible(item, allowedTiers));
     }
     case 'weapon':
-      return state.items.filter((item) => isWeapon(item));
+      return state.items.filter((item) => isSelectableWeaponSlotItem(item));
     case 'attachment': {
       const weapon = getItem(state.currentLoadout.weapons[context.index]?.itemId);
-      return state.items.filter((item) => isAttachmentCompatible(item, weapon, context.attachmentKind));
+      return state.items.filter((item) => isSelectableAttachmentSlotItem(item) && isAttachmentCompatible(item, weapon, context.attachmentKind));
     }
     case 'quick':
       return state.items.filter((item) => isQuickUseEligible(item));
@@ -1621,6 +1915,43 @@ function selectorGroupForItem(context, item) {
   if (context.kind === 'shield') return shieldTier(item) || 'Shield';
   if (context.kind === 'augmented') return item.type || 'Item';
   return item.type || 'Item';
+}
+
+function looksLikeWeaponClass(text = '') {
+  return WEAPON_CLASS_TERMS.some((term) => text.includes(term));
+}
+
+function looksExplicitlyNonWeapon(text = '') {
+  return NON_WEAPON_SLOT_TERMS.some((term) => text.includes(term));
+}
+
+function hasHardNonWeaponType(item) {
+  const text = itemTypeText(item);
+  return /\b(material|component|components|part|parts|ammo|blueprint|grenade|healing|quick use|utility|trap|trinket|consumable|augment|shield)\b/.test(text);
+}
+
+function hasHardNonAttachmentType(item) {
+  const text = itemTypeText(item);
+  return /\b(material|component|components|part|parts|ammo|blueprint|grenade|healing|quick use|utility|trap|trinket|consumable|augment|shield)\b/.test(text);
+}
+
+function isSelectableWeaponSlotItem(item) {
+  if (!item || isBlueprint(item) || isAugmentItem(item) || isShield(item) || isAttachment(item)) return false;
+  if (!isWeapon(item)) return false;
+  if (hasHardNonWeaponType(item) && !hasKnownWeaponProfile(item)) return false;
+  return true;
+}
+
+function isSelectableAttachmentSlotItem(item) {
+  if (!item || isBlueprint(item) || isAugmentItem(item) || isShield(item)) return false;
+  if (!isAttachment(item)) return false;
+  if (hasHardNonAttachmentType(item)) return false;
+  const category = inferAttachmentCategory(item);
+  if (!category) return false;
+  const text = `${item.type || ''} ${item.name || ''} ${item.description || ''}`.toLowerCase();
+  const raw = item.raw || {};
+  const explicitAttachmentMetadata = Boolean(item.attachmentCategory || raw.attachmentCategory || raw.modCategory || raw.slotCategory || raw.modSlot || raw.modType || raw.compatibleWeapons || raw.compatibility);
+  return explicitAttachmentMetadata || hasAttachmentTypeHint(item) || hasAttachmentNameHint(item) || /\b(mod|modification|attachment)\b/.test(text);
 }
 
 function isBlueprint(item) {
@@ -1693,11 +2024,19 @@ function weaponFamilyLabel(item) {
 
 function isWeapon(item) {
   if (!item || isShield(item) || isAugmentItem(item) || isBlueprint(item)) return false;
+  if (isAttachment(item)) return false;
 
   const raw = item.raw || {};
   const text = itemMetadataText(item);
   const typeText = itemTypeText(item);
-  const hasWeaponClassHint = /\b(weapon|assault rifle|battle rifle|break-action rifle|hand cannon|pistol|submachine gun|smg|sniper rifle|shotgun|light machine ?gun|lmg|launcher)\b/.test(typeText);
+  const knownProfile = hasKnownWeaponProfile(item);
+  const explicitWeaponClass = looksLikeWeaponClass(typeText)
+    || /\b(assault rifle|battle rifle|break-action rifle|hand cannon|pistol|submachine gun|smg|sniper rifle|shotgun|light machine ?gun|lmg|launcher|marksman rifle)\b/.test(text)
+    || raw.class === 'Weapon'
+    || raw.category === 'Weapon'
+    || raw.subType === 'Weapon'
+    || raw.type === 'Weapon'
+    || raw.weaponClass;
   const hasWeaponStats = Boolean(
     item.isWeapon
     || raw.isWeapon
@@ -1706,22 +2045,15 @@ function isWeapon(item) {
     || raw.weaponStats
     || raw.damage
     || raw.fireRate
-    || raw.weaponClass
-    || raw.class === 'Weapon'
-    || raw.category === 'Weapon'
-    || raw.subType === 'Weapon'
-    || raw.type === 'Weapon'
+    || raw.firingMode
     || raw.modSlots
     || item.attachmentSlots?.length
     || /\buses (light|medium|heavy|shotgun) ammo\b/.test(text)
     || /\benergy clip\b/.test(text)
   );
-  const explicitAttachmentMarker = Boolean(item.attachmentCategory || raw.attachmentCategory || raw.modCategory || raw.slotCategory || raw.modSlot || raw.modType || hasAttachmentTypeHint(item) || hasAttachmentNameHint(item));
-  if (explicitAttachmentMarker && !hasWeaponClassHint && !hasWeaponStats) return false;
-
-  const explicitNonWeaponMarker = /\b(material|component|components|part|parts|ammo|blueprint|grenade|healing|quick use|utility|trap|trinket|consumable|augment|shield recharger|attachment|weapon mod|modification|muzzle|underbarrel|magazine|stock|optic|scope|sight)\b/.test(text);
-  if (explicitNonWeaponMarker && !hasWeaponStats && !hasWeaponClassHint && !hasKnownWeaponProfile(item)) return false;
-  return Boolean(hasKnownWeaponProfile(item) || hasWeaponStats || hasWeaponClassHint);
+  if (!(knownProfile || explicitWeaponClass)) return false;
+  if (hasHardNonWeaponType(item) && !knownProfile && !explicitWeaponClass) return false;
+  return knownProfile || explicitWeaponClass || (explicitWeaponClass && hasWeaponStats);
 }
 
 function isShield(item) {
@@ -1754,10 +2086,12 @@ function isAugmentItem(item) {
 
 function isAttachment(item) {
   if (!item || isBlueprint(item) || isAugmentItem(item) || isShield(item)) return false;
-  if (item.isWeapon || item.raw?.isWeapon || (isWeapon(item) && !item.attachmentCategory && !item.raw?.attachmentCategory)) {
+  const raw = item.raw || {};
+  const typeText = itemTypeText(item);
+  if (item.isWeapon || raw.isWeapon || looksLikeWeaponClass(typeText)) {
     return false;
   }
-  const hasAttachmentMetadata = Boolean(item.attachmentCategory || item.raw?.attachmentCategory || item.raw?.modCategory || item.raw?.slotCategory || item.raw?.modSlot || item.raw?.modType);
+  const hasAttachmentMetadata = Boolean(item.attachmentCategory || raw.attachmentCategory || raw.modCategory || raw.slotCategory || raw.modSlot || raw.modType || raw.compatibleWeapons || raw.compatibility || raw.compatibleWith);
   if (!hasAttachmentMetadata && !hasAttachmentTypeHint(item) && !hasAttachmentNameHint(item)) {
     return false;
   }
@@ -1972,24 +2306,29 @@ function getAllSelections(loadout, augment) {
   return selections;
 }
 
+function craftedStageLabel(depth) {
+  if (!Number.isFinite(depth) || depth <= 1) return 'Stage 1 crafted';
+  return `Stage ${depth} crafted`;
+}
+
 function renderCraftSummary() {
   const augment = augmentMap[state.currentLoadout.augmentId] || AUGMENTS[0];
   const selections = getAllSelections(state.currentLoadout, augment);
   const plan = buildCraftPlan(selections);
   renderTokenList(dom.basePartsList, plan.baseParts, 'token');
-  renderCraftBuildOrder(plan);
-  dom.basePartCount.textContent = `${plan.baseParts.length} unique`;
-  const stageCount = plan.craftStages.length;
-  const uniqueCrafts = plan.craftedIntermediates.length;
-  dom.craftedPartCount.textContent = stageCount ? `${stageCount} stage${stageCount > 1 ? 's' : ''} · ${uniqueCrafts} craft${uniqueCrafts !== 1 ? 's' : ''}` : '0 stages';
+  renderTokenList(dom.craftedPartsList, plan.craftedIntermediates, 'token token--secondary');
+  dom.basePartCount.textContent = `${plan.baseParts.length} unique`; 
+  dom.craftedPartCount.textContent = `${plan.craftedIntermediates.length} unique`;
   renderDependencyTree(plan.trees);
 }
 
-function isIntermediateCraftItem(item) {
+function isIntermediateCraftItem(item, recipe = null) {
   if (!item) return false;
-  if (isWeapon(item) || isShield(item) || isAugmentItem(item) || isAttachment(item)) return false;
-  const text = itemMetadataText(item);
-  return /\b(material|component|components|part|parts|circuitry|battery|magnet|processor|wire|wires|spring|converter|rod|alloy|canister|chemical|tape)\b/.test(text);
+  if (isWeapon(item) || isShield(item) || isAugmentItem(item) || isAttachment(item) || isBlueprint(item)) return false;
+  const normalizedId = normalizeLooseKey(item.id || item.name || '');
+  if (BASE_ONLY_ITEM_IDS.has(normalizedId)) return false;
+  const resolvedRecipe = Array.isArray(recipe) ? recipe : normalizedRecipe(item);
+  return resolvedRecipe.length > 0;
 }
 
 function buildCraftPlan(selections) {
@@ -1999,11 +2338,12 @@ function buildCraftPlan(selections) {
   const finalSelectionIds = new Set(selections.map((selection) => selection.itemId).filter(Boolean));
 
   const addToMap = (map, itemId, qty, meta = null) => {
-    const existing = map.get(itemId) || { qty: 0, depth: 0, directUses: 0 };
+    const existing = map.get(itemId) || { qty: 0 };
     const next = { ...existing, qty: (existing.qty || 0) + qty };
     if (meta) {
       if (Number.isFinite(meta.depth)) next.depth = Math.max(existing.depth || 0, meta.depth);
       if (Number.isFinite(meta.directUses)) next.directUses = (existing.directUses || 0) + meta.directUses;
+      if (Number.isFinite(meta.totalUses)) next.totalUses = (existing.totalUses || 0) + meta.totalUses;
     }
     map.set(itemId, next);
   };
@@ -2012,16 +2352,20 @@ function buildCraftPlan(selections) {
     const item = getItem(itemId);
     if (!item) {
       addToMap(baseMap, itemId, qty);
-      return { itemId, qty, bench: '', children: [], missing: true, depth };
+      return { itemId, qty, bench: '', children: [], missing: true, craftCount: qty, outputQty: 1, depth };
     }
 
     const recipe = normalizedRecipe(item);
+    const outputQty = inferCraftOutputQuantity(item);
+    const craftCount = Math.max(1, Math.ceil(qty / outputQty));
     const node = {
       itemId,
       qty,
       bench: craftBenchLabel(item),
       children: [],
       missing: false,
+      craftCount,
+      outputQty,
       depth,
     };
 
@@ -2030,11 +2374,11 @@ function buildCraftPlan(selections) {
       return node;
     }
 
-    if (includeInCrafted && isIntermediateCraftItem(item)) {
-      addToMap(craftedMap, itemId, qty, { depth, directUses: 1 });
+    if (includeInCrafted && isIntermediateCraftItem(item, recipe)) {
+      addToMap(craftedMap, itemId, craftCount, { depth, directUses: 1, totalUses: craftCount });
     }
     recipe.forEach(({ ingredientId, amount }) => {
-      node.children.push(visit(ingredientId, amount * qty, true, depth + 1));
+      node.children.push(visit(ingredientId, amount * craftCount, true, depth + 1));
     });
     return node;
   };
@@ -2048,67 +2392,65 @@ function buildCraftPlan(selections) {
   const baseParts = sortedMapEntries(baseMap).map(([itemId, entry]) => ({ itemId, qty: entry.qty }));
   const craftedIntermediates = sortedMapEntries(craftedMap)
     .filter(([itemId]) => !finalSelectionIds.has(itemId))
-    .filter(([itemId]) => isIntermediateCraftItem(getItem(itemId)))
-    .map(([itemId, entry]) => ({ itemId, qty: entry.qty, depth: entry.depth || 1, directUses: entry.directUses || 0 }));
-
-  const craftedLookup = new Map(craftedIntermediates.map((entry) => [entry.itemId, entry]));
-  const maxDepth = craftedIntermediates.reduce((max, entry) => Math.max(max, entry.depth || 0), 0);
-  const stageMap = new Map();
-
-  craftedIntermediates.forEach((entry) => {
-    const item = getItem(entry.itemId);
-    const recipe = normalizedRecipe(item);
-    const stageIndex = maxDepth ? maxDepth - (entry.depth || 1) + 1 : 1;
-    const detail = {
-      ...entry,
-      stageIndex,
-      bench: craftBenchLabel(item),
-      ingredients: recipe.map(({ ingredientId, amount }) => {
-        const ingredientEntry = craftedLookup.get(ingredientId);
-        return {
-          itemId: ingredientId,
-          qty: amount * entry.qty,
-          kind: ingredientEntry ? 'crafted' : 'base',
-          stageIndex: ingredientEntry ? (maxDepth ? maxDepth - (ingredientEntry.depth || 1) + 1 : 1) : null,
-        };
-      }),
-    };
-    if (!stageMap.has(stageIndex)) stageMap.set(stageIndex, []);
-    stageMap.get(stageIndex).push(detail);
-  });
-
-  const craftStages = Array.from(stageMap.entries())
-    .sort((a, b) => a[0] - b[0])
-    .map(([stageIndex, items]) => ({
-      stageIndex,
-      items: items.sort((a, b) => (getItem(a.itemId)?.name || a.itemId).localeCompare(getItem(b.itemId)?.name || b.itemId)),
+    .filter(([itemId]) => isIntermediateCraftItem(getItem(itemId), normalizedRecipe(getItem(itemId))))
+    .map(([itemId, entry]) => ({
+      itemId,
+      qty: entry.qty,
+      depth: entry.depth || 1,
+      directUses: entry.directUses || 0,
+      totalUses: entry.totalUses || entry.qty,
+      note: craftedStageLabel(entry.depth || 1),
     }));
-
-  return { baseParts, craftedIntermediates, craftStages, trees };
+  return { baseParts, craftedIntermediates, trees };
 }
 
 
 function recipeOverrideForItem(item) {
   if (!item) return null;
-  const candidates = [
+  const series = inferSeriesInfo(item);
+  const candidates = new Set([
     item.id,
+    item.name,
     slugify(item.name || '').replace(/-/g, '_'),
     slugify(String(item.name || '').replace(/[()]/g, '')).replace(/-/g, '_'),
-  ].filter(Boolean);
+    normalizeLooseKey(item.id || ''),
+    normalizeLooseKey(item.name || ''),
+  ].filter(Boolean));
+  if (series?.family && series?.tier) {
+    candidates.add(`${series.family}_${numberToRoman(series.tier)}`);
+    candidates.add(`${series.family}_${series.tier}`);
+    candidates.add(`${series.family} ${numberToRoman(series.tier)}`);
+    candidates.add(`${series.family} ${series.tier}`);
+  }
   for (const key of candidates) {
     if (RECIPE_OVERRIDES[key]) return RECIPE_OVERRIDES[key];
+    const normalizedKey = normalizeLooseKey(key);
+    if (RECIPE_OVERRIDES[normalizedKey]) return RECIPE_OVERRIDES[normalizedKey];
   }
+  const normalizedCandidates = new Set([...candidates].map((key) => normalizeLooseKey(key)));
+  const seedMatch = seedData.find((seedItem) => normalizedCandidates.has(normalizeLooseKey(seedItem.id)) || normalizedCandidates.has(normalizeLooseKey(seedItem.name)));
+  if (seedMatch?.recipe) return seedMatch.recipe;
   return augmentMap[item.id]?.recipe || null;
 }
 
 function normalizedRecipe(item) {
   if (!item) return [];
+  const normalizedId = normalizeLooseKey(item.id || item.name || '');
+  if (BASE_ONLY_ITEM_IDS.has(normalizedId)) return [];
   const override = recipeOverrideForItem(item);
   const recipe = override || item.recipe || extractRecipe(item.raw || {}, item.id, item.name);
   if (!recipe || typeof recipe !== 'object') return [];
-  return Object.entries(recipe)
-    .map(([ingredientId, amount]) => ({ ingredientId, amount: Number(amount) || 0 }))
+
+  const entries = Object.entries(recipe)
+    .map(([ingredientId, amount]) => ({ ingredientId: resolveItemReference(ingredientId), amount: Number(amount) || 0 }))
     .filter((entry) => entry.amount > 0 && !shouldIgnoreRecipeIngredient(entry.ingredientId));
+
+  const previousTierItemId = isWeapon(item) ? findPreviousTierItemId(item) : null;
+  if (previousTierItemId && !entries.some((entry) => entry.ingredientId === previousTierItemId)) {
+    entries.unshift({ ingredientId: previousTierItemId, amount: 1 });
+  }
+
+  return entries;
 }
 
 function shouldIgnoreRecipeIngredient(ingredientId) {
@@ -2127,91 +2469,17 @@ function renderTokenList(container, list, className) {
     const item = getItem(entry.itemId);
     const chip = document.createElement('div');
     chip.className = className;
+    const subtitle = [item?.type || 'Unknown', entry.note, Number.isFinite(entry.directUses) && entry.directUses > 0 ? `${entry.directUses} recipe use${entry.directUses > 1 ? 's' : ''}` : '']
+      .filter(Boolean)
+      .join(' · ');
     chip.innerHTML = `
       <div class="token-art" style="background-image:url('${escapeAttribute(getItemArtUrl(item, 'token'))}')"></div>
       <div class="token-copy">
         <strong>${escapeHtml(item?.name || prettifyId(entry.itemId))} × ${entry.qty}</strong>
-        <small>${escapeHtml(item?.type || 'Unknown')}</small>
+        <small>${escapeHtml(subtitle)}</small>
       </div>
     `;
     container.appendChild(chip);
-  });
-}
-
-function renderCraftBuildOrder(plan) {
-  dom.craftedPartsList.innerHTML = '';
-  if (!plan.craftStages.length) {
-    dom.craftedPartsList.innerHTML = '<div class="empty-state">No intermediary crafts are needed for the current selection.</div>';
-    return;
-  }
-
-  plan.craftStages.forEach((stage) => {
-    const section = document.createElement('section');
-    section.className = 'craft-stage';
-
-    const header = document.createElement('div');
-    header.className = 'craft-stage__header';
-    const uniqueCount = stage.items.length;
-    const totalParts = stage.items.reduce((sum, item) => sum + (item.qty || 0), 0);
-    header.innerHTML = `
-      <div>
-        <h4>Stage ${stage.stageIndex}</h4>
-        <p>${stage.stageIndex === 1 ? 'Start here with the deepest intermediary crafts.' : 'Then build these from earlier stages and your gathered parts.'}</p>
-      </div>
-      <span class="status-pill status-pill--muted">${uniqueCount} item${uniqueCount !== 1 ? 's' : ''} · ${totalParts} total</span>
-    `;
-    section.appendChild(header);
-
-    const list = document.createElement('div');
-    list.className = 'craft-stage__list';
-
-    stage.items.forEach((entry) => {
-      const item = getItem(entry.itemId);
-      const card = document.createElement('article');
-      card.className = 'craft-route-card';
-      const ingredientMarkup = entry.ingredients.length
-        ? entry.ingredients
-            .map((ingredient) => {
-              const ingredientItem = getItem(ingredient.itemId);
-              const badge = ingredient.kind === 'crafted' && ingredient.stageIndex
-                ? `Stage ${ingredient.stageIndex}`
-                : ingredient.kind === 'crafted'
-                  ? 'Crafted'
-                  : 'Base';
-              return `
-                <div class="craft-ingredient ${ingredient.kind === 'crafted' ? 'is-crafted' : 'is-base'}">
-                  <div class="craft-ingredient__art" style="background-image:url('${escapeAttribute(getItemArtUrl(ingredientItem, 'token'))}')"></div>
-                  <div class="craft-ingredient__copy">
-                    <strong>${escapeHtml(ingredientItem?.name || prettifyId(ingredient.itemId))} × ${ingredient.qty}</strong>
-                    <small>${escapeHtml(badge)}</small>
-                  </div>
-                </div>
-              `;
-            })
-            .join('')
-        : '<div class="empty-state">No ingredient details available.</div>';
-
-      card.innerHTML = `
-        <div class="craft-route-card__head">
-          <div class="craft-route-card__title">
-            <div class="token-art craft-route-card__art" style="background-image:url('${escapeAttribute(getItemArtUrl(item, 'token'))}')"></div>
-            <div>
-              <h5>${escapeHtml(item?.name || prettifyId(entry.itemId))}</h5>
-              <p>${escapeHtml(entry.bench || 'Craft bench not listed')}</p>
-            </div>
-          </div>
-          <div class="craft-route-card__meta">
-            <span class="status-pill">Need ${entry.qty}</span>
-            ${entry.directUses ? `<span class="status-pill status-pill--muted">${entry.directUses} recipe use${entry.directUses !== 1 ? 's' : ''}</span>` : ''}
-          </div>
-        </div>
-        <div class="craft-route-card__ingredients">${ingredientMarkup}</div>
-      `;
-      list.appendChild(card);
-    });
-
-    section.appendChild(list);
-    dom.craftedPartsList.appendChild(section);
   });
 }
 
@@ -2231,7 +2499,7 @@ function renderDependencyTree(trees) {
           <span>${escapeHtml(tree.label)}</span>
           <span>${escapeHtml(getItem(tree.itemId)?.name || prettifyId(tree.itemId))} × ${tree.qty}</span>
         </div>
-        <small>${escapeHtml(tree.bench || 'No recipe')}</small>
+        <small>${escapeHtml(tree.bench || 'No recipe')}${tree.outputQty > 1 ? ` · ${tree.craftCount} craft${tree.craftCount > 1 ? 's' : ''} @ ${tree.outputQty}` : ''}</small>
       </summary>
       <div class="tree-children"></div>
     `;
@@ -2253,7 +2521,7 @@ function renderDependencyNode(node) {
   if (!node.children.length) {
     const leaf = document.createElement('div');
     leaf.className = 'tree-leaf';
-    leaf.innerHTML = `<strong>${escapeHtml(item?.name || prettifyId(node.itemId))} × ${node.qty}</strong> <span class="tree-bench">${escapeHtml(node.bench || 'Base material')}</span>`;
+    leaf.innerHTML = `<strong>${escapeHtml(item?.name || prettifyId(node.itemId))} × ${node.qty}</strong> <span class="tree-bench">${escapeHtml(node.bench || 'Base material')}${node.outputQty > 1 ? ` · ${node.craftCount} craft${node.craftCount > 1 ? 's' : ''} @ ${node.outputQty}` : ''}</span>`;
     return leaf;
   }
   const details = document.createElement('details');
@@ -2263,7 +2531,7 @@ function renderDependencyNode(node) {
       <div class="tree-title">
         <span>${escapeHtml(item?.name || prettifyId(node.itemId))} × ${node.qty}</span>
       </div>
-      <small>${escapeHtml(node.bench || 'Crafted')}</small>
+      <small>${escapeHtml(node.bench || 'Crafted')}${node.outputQty > 1 ? ` · ${node.craftCount} craft${node.craftCount > 1 ? 's' : ''} @ ${node.outputQty}` : ''}</small>
     </summary>
     <div class="tree-children"></div>
   `;
@@ -2302,15 +2570,8 @@ function copyFullPlan() {
   lines.push('Base parts:');
   plan.baseParts.forEach((entry) => lines.push(`- ${entry.qty}x ${getItem(entry.itemId)?.name || prettifyId(entry.itemId)}`));
   lines.push('');
-  lines.push('Build order:');
-  if (!plan.craftStages.length) {
-    lines.push('- No intermediary crafts required');
-  } else {
-    plan.craftStages.forEach((stage) => {
-      lines.push(`Stage ${stage.stageIndex}:`);
-      stage.items.forEach((entry) => lines.push(`- ${entry.qty}x ${getItem(entry.itemId)?.name || prettifyId(entry.itemId)}`));
-    });
-  }
+  lines.push('Crafted intermediates:');
+  plan.craftedIntermediates.forEach((entry) => lines.push(`- ${entry.qty}x ${getItem(entry.itemId)?.name || prettifyId(entry.itemId)}`));
   navigator.clipboard.writeText(lines.join('\n'));
 }
 
@@ -2391,8 +2652,14 @@ function getItem(itemId) {
 }
 
 function sortedMapEntries(map) {
+  const metric = (value) => {
+    if (typeof value === 'number') return value;
+    if (value && typeof value === 'object') return Number(value.qty || 0);
+    return 0;
+  };
   return [...map.entries()].sort((a, b) => {
-    if (b[1] !== a[1]) return b[1] - a[1];
+    const diff = metric(b[1]) - metric(a[1]);
+    if (diff !== 0) return diff;
     const aName = getItem(a[0])?.name || a[0];
     const bName = getItem(b[0])?.name || b[0];
     return aName.localeCompare(bName);
