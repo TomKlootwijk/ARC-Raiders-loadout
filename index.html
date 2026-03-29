@@ -2,8 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#07101c" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ARC Raiders Loadout Planner</title>
     <meta
       name="description"
@@ -82,16 +81,17 @@
             <div id="augmentMeta" class="augment-meta"></div>
           </div>
 
-          <div class="mobile-board-nav" id="mobileBoardNav">
-            <button type="button" class="mobile-board-tab is-active" data-mobile-panel="equipment">Equipment</button>
-            <button type="button" class="mobile-board-tab" data-mobile-panel="backpack">Backpack</button>
-            <button type="button" class="mobile-board-tab" data-mobile-panel="utility">Utility</button>
-          </div>
+          <nav class="mobile-board-nav" aria-label="Loadout sections">
+            <a href="#equipmentColumn" class="mobile-board-nav__link">Equipment</a>
+            <a href="#backpackColumn" class="mobile-board-nav__link">Backpack</a>
+            <a href="#utilityColumn" class="mobile-board-nav__link">Utility</a>
+            <a href="#craftCard" class="mobile-board-nav__link">Crafting</a>
+          </nav>
 
-          <div class="loadout-board" id="loadoutBoard" data-mobile-panel="equipment">
+          <div class="loadout-board">
             <div class="board-bg"></div>
 
-            <section class="column equipment-column" data-board-panel="equipment">
+            <section id="equipmentColumn" class="column equipment-column">
               <div class="section-title-block">
                 <h2>Loadout</h2>
                 <p id="equipmentSubtitle" class="section-subtitle"></p>
@@ -106,7 +106,7 @@
               <div id="weaponSlotsMount" class="weapon-stack"></div>
             </section>
 
-            <section class="column backpack-column" data-board-panel="backpack">
+            <section id="backpackColumn" class="column backpack-column">
               <div class="section-header-inline">
                 <h3 class="section-title">Backpack</h3>
                 <span id="backpackCountLabel" class="count-label"></span>
@@ -114,7 +114,7 @@
               <div id="backpackGrid" class="slot-grid slot-grid--backpack"></div>
             </section>
 
-            <section class="column utility-column" data-board-panel="utility">
+            <section id="utilityColumn" class="column utility-column">
               <div class="section-header-inline">
                 <h3 class="section-title">Quick Use</h3>
                 <span id="quickUseCountLabel" class="count-label"></span>
@@ -137,7 +137,7 @@
         </section>
       </main>
 
-      <section class="craft-card card">
+      <section id="craftCard" class="craft-card card">
         <div class="craft-header">
           <div>
             <p class="eyebrow">Crafting breakdown</p>

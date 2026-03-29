@@ -34,8 +34,16 @@ body {
   font-family: var(--font);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   padding: 18px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
 button,
@@ -46,8 +54,6 @@ select {
 
 button {
   cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
 }
 
 .page-shell {
@@ -55,6 +61,7 @@ button {
   margin: 0 auto;
   display: grid;
   gap: 18px;
+  min-height: 100vh;
 }
 
 .card {
@@ -215,6 +222,11 @@ button {
 .board-card {
   display: grid;
   gap: 16px;
+  overflow: clip;
+}
+
+.mobile-board-nav {
+  display: none;
 }
 
 .board-topline {
@@ -251,27 +263,6 @@ button {
   flex-wrap: wrap;
 }
 
-.mobile-board-nav {
-  display: none;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.mobile-board-tab {
-  flex: 1 1 0;
-  min-height: 44px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--muted-strong);
-}
-
-.mobile-board-tab.is-active {
-  background: rgba(101, 198, 255, 0.14);
-  border-color: rgba(101, 198, 255, 0.42);
-  color: #eaf8ff;
-}
-
 .meta-chip {
   padding: 8px 10px;
   border-radius: 999px;
@@ -288,7 +279,7 @@ button {
   gap: 24px;
   min-height: 960px;
   padding: 26px;
-  overflow: hidden;
+  overflow: visible;
   border-radius: 24px;
   border: 1px solid var(--line);
   background: rgba(3, 11, 21, 0.88);
@@ -489,6 +480,7 @@ button {
   grid-template-rows: auto 1fr auto auto;
   gap: 12px;
   overflow: hidden;
+  align-content: start;
 }
 
 .weapon-card::before,
@@ -821,11 +813,71 @@ button {
   color: var(--muted);
 }
 
+
+.selector-item-art,
+.weapon-art,
+.slot-art,
+.token-art {
+  image-rendering: -webkit-optimize-contrast;
+}
+
+#equipmentColumn,
+#backpackColumn,
+#utilityColumn,
+#craftCard {
+  scroll-margin-top: 72px;
+}
+
+@media (orientation: landscape) and (max-width: 1100px) {
+  .page-header,
+  .toolbar,
+  .craft-card,
+  .board-card {
+    padding: 14px;
+  }
+
+  .loadout-board {
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    padding: 16px;
+    min-height: auto;
+  }
+
+  .equipment-column {
+    grid-column: 1 / -1;
+  }
+
+  .slot-grid--backpack {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .slot-grid--quick,
+  .slot-grid--safe {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .slot-button,
+  .slot-button.is-compact {
+    min-height: 84px;
+  }
+
+  .weapon-card {
+    min-height: 184px;
+  }
+
+  .weapon-art {
+    min-height: 74px;
+  }
+
+  .section-title-block h2 {
+    font-size: 1.25rem;
+  }
+}
+
 @media (max-width: 1280px) {
   .loadout-board {
     grid-template-columns: 1fr;
     min-height: auto;
-    padding: 22px;
   }
 
   .craft-panels {
@@ -835,23 +887,11 @@ button {
 
 @media (max-width: 900px) {
   body {
-    padding: 10px;
+    padding: 8px;
   }
 
-  .page-header,
-  .toolbar-grid,
-  .toolbar-grid--secondary {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-
-  .header-actions,
-  .toolbar-actions {
-    width: 100%;
-  }
-
-  .toolbar-actions > * {
-    flex: 1 1 calc(50% - 10px);
+  .page-shell {
+    gap: 12px;
   }
 
   .page-header,
@@ -861,40 +901,47 @@ button {
     padding: 14px;
   }
 
+  .toolbar-grid,
+  .toolbar-grid--secondary,
+  .page-header {
+    grid-template-columns: 1fr;
+  }
+
   .mobile-board-nav {
     display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    position: sticky;
+    top: 8px;
+    z-index: 4;
+  }
+
+  .mobile-board-nav__link {
+    text-decoration: none;
+    color: var(--muted-strong);
+    border: 1px solid var(--line);
+    background: rgba(9, 18, 34, 0.94);
+    border-radius: 999px;
+    padding: 8px 12px;
+    font-size: 0.85rem;
   }
 
   .loadout-board {
-    padding: 16px;
-    gap: 16px;
+    padding: 14px;
+    gap: 14px;
+    border-radius: 20px;
   }
 
-  .loadout-board[data-mobile-panel="equipment"] [data-board-panel]:not([data-board-panel="equipment"]),
-  .loadout-board[data-mobile-panel="backpack"] [data-board-panel]:not([data-board-panel="backpack"]),
-  .loadout-board[data-mobile-panel="utility"] [data-board-panel]:not([data-board-panel="utility"]) {
-    display: none;
+  .section-title-block h2 {
+    font-size: 1rem;
+  }
+
+  .section-title {
+    font-size: 1rem;
   }
 
   .equipment-top-row {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .weapon-card {
-    min-height: 220px;
-  }
-
-  .weapon-art {
-    min-height: 100px;
-  }
-
-  .slot-grid--backpack {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .slot-grid--quick,
-  .slot-grid--safe {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 
   .slot-button,
@@ -904,82 +951,83 @@ button {
   }
 
   .slot-name {
-    font-size: 0.88rem;
+    font-size: 0.9rem;
   }
 
-  .craft-header {
-    align-items: flex-start;
+  .slot-footer {
+    font-size: 0.72rem;
   }
 
-  .modal-card {
-    width: 100vw;
-    max-width: none;
-    max-height: 100dvh;
-    min-height: 100dvh;
-    margin: 0;
-    border-radius: 0;
-    padding: 14px 12px 24px;
-    overflow: auto;
+  .adjust-row {
+    margin-top: 6px;
   }
 
-  .modal-controls {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    padding-bottom: 10px;
-    background: linear-gradient(180deg, rgba(8, 18, 34, 0.98), rgba(8, 18, 34, 0.88));
+  .weapon-card {
+    min-height: 188px;
+    padding: 12px;
+    gap: 10px;
   }
 
-  .selector-results {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 560px) {
-  .page-header h1,
-  .craft-card h2 {
-    font-size: 1.45rem;
+  .weapon-name {
+    font-size: 1.02rem;
   }
 
-  .toolbar-actions > * {
-    flex: 1 1 100%;
+  .weapon-art {
+    min-height: 84px;
   }
 
-  .equipment-top-row {
-    grid-template-columns: 1fr;
+  .attachment-pill {
+    min-height: 48px;
+    min-width: calc(50% - 6px);
+    flex: 1 1 calc(50% - 6px);
   }
 
   .slot-grid--backpack {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
   }
 
   .slot-grid--quick,
   .slot-grid--safe {
-    gap: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .slot-button,
-  .slot-button.is-compact {
-    min-height: 84px;
-    border-radius: 14px;
+  .craft-header,
+  .craft-panel-title-row,
+  .section-header-inline,
+  .modal-header,
+  .modal-controls {
+    align-items: flex-start;
   }
 
-  .slot-label,
-  .weapon-rank,
-  .attachment-pill small {
-    font-size: 0.68rem;
-  }
-
-  .weapon-name {
-    font-size: 1rem;
-  }
-
-  .attachment-pill {
-    min-width: calc(50% - 4px);
+  .modal-card {
+    width: calc(100vw - 8px);
+    margin: 4px auto;
+    max-height: calc(100vh - 8px);
+    padding: 12px;
+    border-radius: 18px;
   }
 
   .selector-results {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-header h1,
+  .craft-card h2 {
+    font-size: 1.5rem;
+  }
+
+  .slot-grid--backpack {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .slot-grid--quick,
+  .slot-grid--safe {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .totals {
+    gap: 14px;
   }
 }

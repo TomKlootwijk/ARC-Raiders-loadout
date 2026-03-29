@@ -11,13 +11,14 @@ A static GitHub Pages friendly planner for ARC Raiders loadouts.
   - augmented slots such as grenade, healing, trinket, or deployable utility
   - safe pocket slots
   - integrated tools such as binoculars / shield recharger / defibrillator
-- Weapon-specific attachment subslots with slot-aware compatibility
+- Weapon-specific attachment subslots with tighter per-weapon slot typing (for example tech, light mag, medium mag, shotgun mag, and shotgun muzzle)
 - Recursive crafting breakdown under the board
   - base materials you must gather
   - crafted intermediary parts needed along the way
   - per-slot dependency tree
 - Named loadouts saved locally in the browser
-- Mobile-friendly board navigation, larger tap targets, and fullscreen item picker
+- Mobile-friendly layout with compact cards, sticky section jump pills, and improved landscape handling
+- Fallback weapon/item thumbnails so every slot still shows an icon when the live catalog image is missing
 - JSON import/export for sharing or backups
 
 ## Storage
@@ -73,12 +74,12 @@ Then open `http://localhost:8000`.
 - This planner uses community-maintained data sources.
 - Some live item metadata can lag behind the game, especially newly added or renamed equipment.
 - Augment slot definitions are hard-coded in the app so the board layout remains stable even when catalog data is incomplete.
+- The built-in recipe overrides intentionally prefer direct crafting recipes over recycle chains for common materials and weapon mods.
+- Backpack slots now allow general items, including weapons and shields, though dragging an already-modded weapon from a weapon slot into a backpack slot is still a future enhancement.
 
 ## Customizing the item rules
 
-The fallback catalog now includes more slot-specific weapon rules and recipes for common weapons, mods, and crafted intermediates.
-
-If you want to tune filtering even further for specific weapons or attachment compatibility, edit these parts in `app.js`:
+If you want tighter filtering for specific weapons or attachment compatibility, edit these parts in `app.js`:
 
 - `guessAttachmentSlotsForWeapon()`
 - `isAttachmentCompatible()`
