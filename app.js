@@ -287,6 +287,23 @@ const ATTACHMENT_SLOT_LABELS = {
 
 const SLOT_DISPLAY_ORDER = ['muzzle', 'shotgun_muzzle', 'underbarrel', 'light_magazine', 'medium_magazine', 'heavy_magazine', 'shotgun_magazine', 'magazine', 'stock', 'tech', 'optic', 'special'];
 
+const WEAPON_TYPE_LABELS = new Set([
+  'assault rifle',
+  'battle rifle',
+  'break-action rifle',
+  'hand cannon',
+  'pistol',
+  'submachine gun',
+  'smg',
+  'sniper rifle',
+  'shotgun',
+  'light machine gun',
+  'lmg',
+  'launcher',
+  'marksman rifle',
+  'special',
+]);
+
 const WEAPON_SLOT_OVERRIDES = {
   'anvil': ['muzzle', 'tech'],
   'kettle': ['muzzle', 'underbarrel', 'light_magazine', 'stock'],
@@ -593,6 +610,17 @@ function inferSeriesInfo(item) {
     if (family && tier) return { family, tier };
   }
   return null;
+}
+
+function inferSeriesInfoLoose(item) {
+  if (!item) return null;
+  const combined = normalizeRomanGlyphs(`${item.id || ''} ${item.name || ''}`.trim());
+  const match = combined.match(/\b([a-z][a-z0-9' -]+?)\s+(i{1,3}|iv|v|vi|[1-9])\b/i);
+  if (!match) return null;
+  const family = normalizeLooseKey(match[1]);
+  const tier = parseTierToken(match[2]);
+  if (!family || !tier) return null;
+  return { family, tier };
 }
 
 function buildLooseCandidates(value) {
@@ -1680,12 +1708,22 @@ function swapAugment(nextAugmentId) {
   renderAll();
 }
 
+function quantityStepForItem(item) {
+  return Math.max(1, inferCraftOutputQuantity(item) || 1);
+}
+
+function defaultQuantityForItem(item) {
+  if (!item) return 1;
+  return clamp(quantityStepForItem(item), 1, item.stackSize || 1);
+}
+
 function adjustStackQuantity(area, index, delta) {
   const entry = state.currentLoadout[area][index];
   if (!entry?.itemId) return;
   const item = getItem(entry.itemId);
   if (!item) return;
-  entry.qty = clamp(entry.qty + delta, 1, item.stackSize || 1);
+  const step = quantityStepForItem(item);
+  entry.qty = clamp(entry.qty + (delta * step), step > 1 ? Math.min(step, item.stackSize || step) : 1, item.stackSize || 1);
   renderAll();
 }
 
@@ -1694,7 +1732,8 @@ function adjustAugmentedQuantity(index, delta) {
   if (!entry?.itemId) return;
   const item = getItem(entry.itemId);
   if (!item) return;
-  entry.qty = clamp(entry.qty + delta, 1, item.stackSize || 1);
+  const step = quantityStepForItem(item);
+  entry.qty = clamp(entry.qty + (delta * step), step > 1 ? Math.min(step, item.stackSize || step) : 1, item.stackSize || 1);
   renderAll();
 }
 
@@ -1793,7 +1832,7 @@ function assignSelection(context, item) {
       closeModal();
       return;
     case 'shield':
-      state.currentLoadout.shield = { itemId: item.id, qty: 1 };
+      state.currentLoadout.shield = { itemId: item.id, qty: defaultQuantityForItem(item) }
       break;
     case 'weapon':
       state.currentLoadout.weapons[context.index] = { itemId: item.id, attachments: {} };
@@ -1802,19 +1841,19 @@ function assignSelection(context, item) {
       state.currentLoadout.weapons[context.index].attachments[context.attachmentKind] = item.id;
       break;
     case 'backpack':
-      state.currentLoadout.backpack[context.index] = { itemId: item.id, qty: 1 };
+      state.currentLoadout.backpack[context.index] = { itemId: item.id, qty: defaultQuantityForItem(item) }
       break;
     case 'quick':
-      state.currentLoadout.quickUse[context.index] = { itemId: item.id, qty: 1 };
+      state.currentLoadout.quickUse[context.index] = { itemId: item.id, qty: defaultQuantityForItem(item) }
       break;
     case 'safe':
-      state.currentLoadout.safePocket[context.index] = { itemId: item.id, qty: 1 };
+      state.currentLoadout.safePocket[context.index] = { itemId: item.id, qty: defaultQuantityForItem(item) }
       break;
     case 'augmented':
       state.currentLoadout.augmented[context.index] = {
         ...state.currentLoadout.augmented[context.index],
         itemId: item.id,
-        qty: 1,
+        qty: defaultQuantityForItem(item),
       };
       break;
     default:
@@ -1848,7 +1887,7 @@ function clearSelection(context) {
       state.currentLoadout.augmented[context.index] = {
         ...state.currentLoadout.augmented[context.index],
         itemId: null,
-        qty: 1,
+        qty: defaultQuantityForItem(item),
       };
       break;
     default:
@@ -1938,6 +1977,16 @@ function hasHardNonAttachmentType(item) {
 function isSelectableWeaponSlotItem(item) {
   if (!item || isBlueprint(item) || isAugmentItem(item) || isShield(item) || isAttachment(item)) return false;
   if (!isWeapon(item)) return false;
+  const raw = item.raw || {};
+  const typeText = itemTypeText(item);
+  const explicitWeaponType = looksLikeWeaponClass(typeText)
+    || WEAPON_TYPE_LABELS.has(String(item.type || '').toLowerCase())
+    || raw.class === 'Weapon'
+    || raw.category === 'Weapon'
+    || raw.subType === 'Weapon'
+    || raw.type === 'Weapon'
+    || Boolean(raw.weaponClass);
+  if (!hasKnownWeaponProfile(item) && !explicitWeaponType) return false;
   if (hasHardNonWeaponType(item) && !hasKnownWeaponProfile(item)) return false;
   return true;
 }
@@ -2119,9 +2168,9 @@ function inferAttachmentCategory(item) {
   if (/\bmedium(?: |-)?mag(?:azine)?\b/.test(text)) return 'medium_magazine';
   if (/\bheavy(?: |-)?mag(?:azine)?\b/.test(text)) return 'heavy_magazine';
   if (/\bshotgun(?: |-)?muzzle\b|\bchoke\b/.test(text)) return 'shotgun_muzzle';
+  if (/\bunderbarrel\b|\bgrip\b|\bforegrip\b|\bfore grip\b|\blaser\b/.test(text)) return 'underbarrel';
   if (/\btech(?: |-)?mod\b|\bsplitter\b|\bbeam tuner\b|\barc mod\b/.test(text)) return 'tech';
   if (/\bmuzzle\b|\bsilencer\b|\bsuppressor\b|\bbrake\b|\bcompensator\b|\bbarrel\b/.test(text)) return 'muzzle';
-  if (/\bunderbarrel\b|\bgrip\b|\bforegrip\b|\blaser\b/.test(text)) return 'underbarrel';
   if (/\bextended(?: [a-z]+)? magazine\b|\bdrum magazine\b|\bmagazine\b/.test(text)) return 'magazine';
   if (/\bstock\b/.test(text)) return 'stock';
   if (/\bscope\b|\boptic\b|\bsight\b/.test(text)) return 'optic';
@@ -2129,18 +2178,21 @@ function inferAttachmentCategory(item) {
 }
 
 function normalizeAttachmentCategory(value) {
-  const lowered = value.toLowerCase().replace(/[_-]+/g, ' ');
+  const lowered = String(value || '').toLowerCase().replace(/[_-]+/g, ' ').trim();
+  if (!lowered) return null;
   if (lowered.includes('shotgun muzzle')) return 'shotgun_muzzle';
   if (lowered.includes('shotgun mag')) return 'shotgun_magazine';
   if (lowered.includes('light mag')) return 'light_magazine';
   if (lowered.includes('medium mag')) return 'medium_magazine';
   if (lowered.includes('heavy mag')) return 'heavy_magazine';
+  if (lowered.includes('underbarrel') || lowered.includes('under barrel') || lowered.includes('foregrip') || lowered.includes('fore grip') || lowered.includes('grip') || lowered.includes('laser')) return 'underbarrel';
   if (lowered.includes('tech')) return 'tech';
-  if (lowered.includes('muzzle') || lowered.includes('barrel') || lowered.includes('silencer') || lowered.includes('compensator')) return 'muzzle';
-  if (lowered.includes('under') || lowered.includes('grip')) return 'underbarrel';
-  if (lowered.includes('magazine') || /\bmag\b/.test(lowered)) return 'magazine';
+  if (lowered.includes('magazine') || /mag/.test(lowered)) return 'magazine';
   if (lowered.includes('stock')) return 'stock';
   if (lowered.includes('optic') || lowered.includes('sight') || lowered.includes('scope')) return 'optic';
+  if (lowered.includes('muzzle') || (lowered.includes('barrel') && !lowered.includes('underbarrel') && !lowered.includes('under barrel')) || lowered.includes('silencer') || lowered.includes('compensator') || lowered.includes('brake') || lowered.includes('suppressor') || lowered.includes('choke')) {
+    return lowered.includes('shotgun') || lowered.includes('choke') ? 'shotgun_muzzle' : 'muzzle';
+  }
   if (lowered.includes('special')) return 'special';
   return null;
 }
@@ -2333,7 +2385,6 @@ function isIntermediateCraftItem(item, recipe = null) {
 
 function buildCraftPlan(selections) {
   const baseMap = new Map();
-  const craftedMap = new Map();
   const trees = [];
   const finalSelectionIds = new Set(selections.map((selection) => selection.itemId).filter(Boolean));
 
@@ -2342,13 +2393,13 @@ function buildCraftPlan(selections) {
     const next = { ...existing, qty: (existing.qty || 0) + qty };
     if (meta) {
       if (Number.isFinite(meta.depth)) next.depth = Math.max(existing.depth || 0, meta.depth);
-      if (Number.isFinite(meta.directUses)) next.directUses = (existing.directUses || 0) + meta.directUses;
-      if (Number.isFinite(meta.totalUses)) next.totalUses = (existing.totalUses || 0) + meta.totalUses;
+      if (Number.isFinite(meta.recipeUses)) next.recipeUses = (existing.recipeUses || 0) + meta.recipeUses;
+      if (Number.isFinite(meta.totalCrafts)) next.totalCrafts = (existing.totalCrafts || 0) + meta.totalCrafts;
     }
     map.set(itemId, next);
   };
 
-  const visit = (itemId, qty, includeInCrafted = true, depth = 0) => {
+  const visit = (itemId, qty, depth = 0) => {
     const item = getItem(itemId);
     if (!item) {
       addToMap(baseMap, itemId, qty);
@@ -2374,31 +2425,41 @@ function buildCraftPlan(selections) {
       return node;
     }
 
-    if (includeInCrafted && isIntermediateCraftItem(item, recipe)) {
-      addToMap(craftedMap, itemId, craftCount, { depth, directUses: 1, totalUses: craftCount });
-    }
     recipe.forEach(({ ingredientId, amount }) => {
-      node.children.push(visit(ingredientId, amount * craftCount, true, depth + 1));
+      node.children.push(visit(ingredientId, amount * craftCount, depth + 1));
     });
     return node;
   };
 
   selections.forEach((selection) => {
-    const tree = visit(selection.itemId, selection.qty, false, 0);
+    const tree = visit(selection.itemId, selection.qty, 0);
     tree.label = selection.label;
     trees.push(tree);
   });
 
+  const craftedMap = new Map();
+  const collectCrafted = (node) => {
+    if (!node) return;
+    const item = getItem(node.itemId);
+    if (item && node.children?.length && !finalSelectionIds.has(node.itemId) && isIntermediateCraftItem(item, normalizedRecipe(item))) {
+      addToMap(craftedMap, node.itemId, node.qty, {
+        depth: node.depth,
+        recipeUses: 1,
+        totalCrafts: node.craftCount,
+      });
+    }
+    (node.children || []).forEach(collectCrafted);
+  };
+  trees.forEach(collectCrafted);
+
   const baseParts = sortedMapEntries(baseMap).map(([itemId, entry]) => ({ itemId, qty: entry.qty }));
   const craftedIntermediates = sortedMapEntries(craftedMap)
-    .filter(([itemId]) => !finalSelectionIds.has(itemId))
-    .filter(([itemId]) => isIntermediateCraftItem(getItem(itemId), normalizedRecipe(getItem(itemId))))
     .map(([itemId, entry]) => ({
       itemId,
       qty: entry.qty,
       depth: entry.depth || 1,
-      directUses: entry.directUses || 0,
-      totalUses: entry.totalUses || entry.qty,
+      directUses: entry.recipeUses || 0,
+      totalUses: entry.totalCrafts || entry.qty,
       note: craftedStageLabel(entry.depth || 1),
     }));
   return { baseParts, craftedIntermediates, trees };
@@ -2407,7 +2468,7 @@ function buildCraftPlan(selections) {
 
 function recipeOverrideForItem(item) {
   if (!item) return null;
-  const series = inferSeriesInfo(item);
+  const series = inferSeriesInfo(item) || inferSeriesInfoLoose(item);
   const candidates = new Set([
     item.id,
     item.name,
@@ -2415,6 +2476,7 @@ function recipeOverrideForItem(item) {
     slugify(String(item.name || '').replace(/[()]/g, '')).replace(/-/g, '_'),
     normalizeLooseKey(item.id || ''),
     normalizeLooseKey(item.name || ''),
+    normalizeLooseKey(`${item.name || ''} ${item.type || ''}`),
   ].filter(Boolean));
   if (series?.family && series?.tier) {
     candidates.add(`${series.family}_${numberToRoman(series.tier)}`);
@@ -2422,12 +2484,22 @@ function recipeOverrideForItem(item) {
     candidates.add(`${series.family} ${numberToRoman(series.tier)}`);
     candidates.add(`${series.family} ${series.tier}`);
   }
+  const normalizedCandidates = new Set([...candidates].map((key) => normalizeLooseKey(key)).filter(Boolean));
+
   for (const key of candidates) {
     if (RECIPE_OVERRIDES[key]) return RECIPE_OVERRIDES[key];
     const normalizedKey = normalizeLooseKey(key);
     if (RECIPE_OVERRIDES[normalizedKey]) return RECIPE_OVERRIDES[normalizedKey];
   }
-  const normalizedCandidates = new Set([...candidates].map((key) => normalizeLooseKey(key)));
+
+  const overrideEntries = Object.entries(RECIPE_OVERRIDES).sort((a, b) => b[0].length - a[0].length);
+  for (const [overrideKey, recipe] of overrideEntries) {
+    const normalizedOverrideKey = normalizeLooseKey(overrideKey);
+    if ([...normalizedCandidates].some((candidate) => candidate === normalizedOverrideKey || candidate.includes(normalizedOverrideKey) || normalizedOverrideKey.includes(candidate))) {
+      return recipe;
+    }
+  }
+
   const seedMatch = seedData.find((seedItem) => normalizedCandidates.has(normalizeLooseKey(seedItem.id)) || normalizedCandidates.has(normalizeLooseKey(seedItem.name)));
   if (seedMatch?.recipe) return seedMatch.recipe;
   return augmentMap[item.id]?.recipe || null;
