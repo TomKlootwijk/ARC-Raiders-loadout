@@ -11,14 +11,12 @@ A static GitHub Pages friendly planner for ARC Raiders loadouts.
   - augmented slots such as grenade, healing, trinket, or deployable utility
   - safe pocket slots
   - integrated tools such as binoculars / shield recharger / defibrillator
-- Weapon-specific attachment subslots with tighter per-weapon slot typing (for example tech, light mag, medium mag, shotgun mag, and shotgun muzzle)
+- Weapon-specific attachment subslots
 - Recursive crafting breakdown under the board
   - base materials you must gather
   - crafted intermediary parts needed along the way
   - per-slot dependency tree
 - Named loadouts saved locally in the browser
-- Mobile-friendly layout with compact cards, sticky section jump pills, and improved landscape handling
-- Fallback weapon/item thumbnails so every slot still shows an icon when the live catalog image is missing
 - JSON import/export for sharing or backups
 
 ## Storage
@@ -45,7 +43,7 @@ If the live catalog is unavailable, the app falls back to a built-in seed datase
 - `index.html` – app shell
 - `styles.css` – styling
 - `app.js` – planner logic, catalog loader, save/load, crafting recursion
-- `assets/` – reference screenshots kept only as source material
+- `assets/` – background references from the supplied screenshots
 
 ## Deploy to GitHub Pages
 
@@ -74,8 +72,6 @@ Then open `http://localhost:8000`.
 - This planner uses community-maintained data sources.
 - Some live item metadata can lag behind the game, especially newly added or renamed equipment.
 - Augment slot definitions are hard-coded in the app so the board layout remains stable even when catalog data is incomplete.
-- The built-in recipe overrides intentionally prefer direct crafting recipes over recycle chains for common materials, weapons, and weapon mods.
-- Backpack slots now allow general items, including weapons and shields, though dragging an already-modded weapon from a weapon slot into a backpack slot is still a future enhancement.
 
 ## Customizing the item rules
 
@@ -90,4 +86,4 @@ If you want tighter filtering for specific weapons or attachment compatibility, 
 
 ## Background art
 
-The live planner no longer renders the screenshot as a background image. The reference screenshots are kept in `assets/` only as development source material.
+The board uses the supplied ARC Raiders loadout screenshots as a low-opacity visual reference background and overlays interactive slots on top.

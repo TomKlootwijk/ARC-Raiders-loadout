@@ -309,6 +309,13 @@ const WEAPON_SLOT_OVERRIDES = {
   'aphelion': ['underbarrel', 'stock'],
 };
 
+const ITEM_CRAFT_OUTPUT_OVERRIDES = {
+  heavy_ammo: 10,
+  medium_ammo: 20,
+  light_ammo: 25,
+  shotgun_ammo: 5,
+};
+
 const RECIPE_OVERRIDES = {
   mechanical_components: { metal_parts: 7, rubber_parts: 3 },
   electrical_components: { plastic_parts: 8, rubber_parts: 4 },
@@ -401,6 +408,127 @@ const state = {
   },
   overflowBin: [],
 };
+
+const ROMAN_TIER_MAP = { i: 1, ii: 2, iii: 3, iv: 4, v: 5, vi: 6 };
+
+function canonicalLookupPool() {
+  const pools = [];
+  if (state?.items?.length) pools.push(...state.items);
+  pools.push(...seedData);
+  return pools;
+}
+
+function numberToRoman(value) {
+  const map = { 1: 'i', 2: 'ii', 3: 'iii', 4: 'iv', 5: 'v', 6: 'vi' };
+  return map[value] || '';
+}
+
+function normalizeLooseKey(value) {
+  return slugify(String(value || ''))
+    .replace(/-/g, '_')
+    .replace(/\bmark\b/g, 'mk')
+    .replace(/_(\d)\b/g, (_, digit) => `_${numberToRoman(Number(digit)) || digit}`)
+    .replace(/\b(\d)\b/g, (_, digit) => numberToRoman(Number(digit)) || digit)
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
+}
+
+function parseTierToken(value) {
+  const token = String(value || '').trim().toLowerCase();
+  if (ROMAN_TIER_MAP[token]) return ROMAN_TIER_MAP[token];
+  const numeric = Number(token);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : null;
+}
+
+function inferSeriesInfo(item) {
+  if (!item) return null;
+  const sources = [item.id, item.name].filter(Boolean);
+  for (const source of sources) {
+    const text = String(source).trim();
+    const match = text.match(/^(.*?)(?:[ _-]|\s+)(i{1,3}|iv|v|vi|[1-9])$/i);
+    if (!match) continue;
+    const family = normalizeLooseKey(match[1]);
+    const tier = parseTierToken(match[2]);
+    if (family && tier) return { family, tier };
+  }
+  return null;
+}
+
+function buildLooseCandidates(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return [];
+  const base = normalizeLooseKey(raw);
+  const out = new Set([raw, raw.toLowerCase(), base]);
+  const match = base.match(/^(.*?)(?:_|)(i{1,3}|iv|v|vi|[1-9])$/i);
+  if (match) {
+    const family = match[1].replace(/_+$/, '');
+    const tier = parseTierToken(match[2]);
+    if (family && tier) {
+      out.add(`${family}_${numberToRoman(tier)}`);
+      out.add(`${family}_${tier}`);
+      out.add(`${family} ${numberToRoman(tier)}`.trim());
+      out.add(`${family} ${tier}`.trim());
+    }
+  }
+  return [...out].filter(Boolean);
+}
+
+function resolveItemReference(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  const pools = canonicalLookupPool();
+  const candidates = buildLooseCandidates(raw);
+  for (const candidate of candidates) {
+    if (state.itemsById?.[candidate]) return candidate;
+    const exact = pools.find((item) => item.id === candidate || item.name === candidate);
+    if (exact) return exact.id;
+  }
+  const normalizedCandidates = new Set(candidates.map(normalizeLooseKey));
+  const fuzzy = pools.find((item) => normalizedCandidates.has(normalizeLooseKey(item.id)) || normalizedCandidates.has(normalizeLooseKey(item.name)));
+  return fuzzy?.id || normalizeLooseKey(raw) || raw;
+}
+
+function findPreviousTierItemId(item) {
+  const info = inferSeriesInfo(item);
+  if (!info || info.tier <= 1) return null;
+  const previousTier = info.tier - 1;
+  const candidates = [
+    `${info.family}_${numberToRoman(previousTier)}`,
+    `${info.family}_${previousTier}`,
+    `${info.family} ${numberToRoman(previousTier)}`,
+    `${info.family} ${previousTier}`,
+  ].filter(Boolean);
+  const pools = canonicalLookupPool();
+  for (const candidate of candidates) {
+    const resolved = resolveItemReference(candidate);
+    if (resolved && resolved !== item.id && pools.some((entry) => entry.id === resolved)) return resolved;
+  }
+  return null;
+}
+
+function inferCraftOutputQuantity(item) {
+  if (!item) return 1;
+  const raw = item.raw || {};
+  const directCandidates = [
+    raw.outputQuantity,
+    raw.craftOutputQuantity,
+    raw.outputQty,
+    raw.resultCount,
+    raw.resultQuantity,
+    raw.quantityProduced,
+  ];
+  for (const candidate of directCandidates) {
+    const numeric = Number(candidate || 0);
+    if (Number.isFinite(numeric) && numeric > 0) return numeric;
+  }
+  const normalizedId = normalizeLooseKey(item.id || item.name || '');
+  if (ITEM_CRAFT_OUTPUT_OVERRIDES[normalizedId]) return ITEM_CRAFT_OUTPUT_OVERRIDES[normalizedId];
+  if (normalizedId.includes('heavy_ammo')) return ITEM_CRAFT_OUTPUT_OVERRIDES.heavy_ammo;
+  if (normalizedId.includes('medium_ammo')) return ITEM_CRAFT_OUTPUT_OVERRIDES.medium_ammo;
+  if (normalizedId.includes('light_ammo')) return ITEM_CRAFT_OUTPUT_OVERRIDES.light_ammo;
+  if (normalizedId.includes('shotgun_ammo')) return ITEM_CRAFT_OUTPUT_OVERRIDES.shotgun_ammo;
+  return 1;
+}
 
 function buildSeedData() {
   const materials = [
@@ -943,7 +1071,8 @@ function normalizeRecipeShape(candidate) {
     candidate.forEach((entry) => {
       const key = entry?.itemId || entry?.id || entry?.item || entry?.material || entry?.name || entry?.slug;
       const qty = Number(entry?.qty ?? entry?.amount ?? entry?.count ?? entry?.value ?? 0);
-      if (key && qty > 0) out[String(key)] = qty;
+      const resolvedKey = resolveItemReference(key);
+      if (resolvedKey && qty > 0) out[String(resolvedKey)] = qty;
     });
     return Object.keys(out).length ? out : null;
   }
@@ -951,14 +1080,20 @@ function normalizeRecipeShape(candidate) {
     const keys = Object.keys(candidate);
     if (!keys.length) return null;
     if (keys.every((key) => typeof candidate[key] === 'number' || /^\d+(\.\d+)?$/.test(String(candidate[key])))) {
-      return candidate;
+      const resolved = {};
+      keys.forEach((key) => {
+        const resolvedKey = resolveItemReference(key);
+        if (!resolvedKey) return;
+        resolved[resolvedKey] = Number(candidate[key]);
+      });
+      return resolved;
     }
     const out = {};
     keys.forEach((key) => {
       const value = candidate[key];
       if (value && typeof value === 'object') {
         const qty = Number(value.qty ?? value.amount ?? value.count ?? value.value ?? 0);
-        const itemId = value.itemId || value.id || key;
+        const itemId = resolveItemReference(value.itemId || value.id || key);
         if (itemId && qty > 0) out[String(itemId)] = qty;
       }
     });
@@ -2004,16 +2139,20 @@ function buildCraftPlan(selections) {
     const item = getItem(itemId);
     if (!item) {
       addToMap(baseMap, itemId, qty);
-      return { itemId, qty, bench: '', children: [], missing: true };
+      return { itemId, qty, bench: '', children: [], missing: true, craftCount: qty, outputQty: 1 };
     }
 
     const recipe = normalizedRecipe(item);
+    const outputQty = inferCraftOutputQuantity(item);
+    const craftCount = Math.max(1, Math.ceil(qty / outputQty));
     const node = {
       itemId,
       qty,
       bench: craftBenchLabel(item),
       children: [],
       missing: false,
+      craftCount,
+      outputQty,
     };
 
     if (!recipe.length) {
@@ -2021,9 +2160,9 @@ function buildCraftPlan(selections) {
       return node;
     }
 
-    if (includeInCrafted) addToMap(craftedMap, itemId, qty);
+    if (includeInCrafted && isIntermediateCraftItem(item)) addToMap(craftedMap, itemId, craftCount);
     recipe.forEach(({ ingredientId, amount }) => {
-      node.children.push(visit(ingredientId, amount * qty, true));
+      node.children.push(visit(ingredientId, amount * craftCount, true));
     });
     return node;
   };
@@ -2049,10 +2188,15 @@ function recipeOverrideForItem(item) {
     item.id,
     slugify(item.name || '').replace(/-/g, '_'),
     slugify(String(item.name || '').replace(/[()]/g, '')).replace(/-/g, '_'),
+    normalizeLooseKey(item.id || ''),
+    normalizeLooseKey(item.name || ''),
   ].filter(Boolean);
   for (const key of candidates) {
     if (RECIPE_OVERRIDES[key]) return RECIPE_OVERRIDES[key];
   }
+  const normalizedCandidates = new Set(candidates.map((key) => normalizeLooseKey(key)));
+  const seedMatch = seedData.find((seedItem) => normalizedCandidates.has(normalizeLooseKey(seedItem.id)) || normalizedCandidates.has(normalizeLooseKey(seedItem.name)));
+  if (seedMatch?.recipe) return seedMatch.recipe;
   return augmentMap[item.id]?.recipe || null;
 }
 
@@ -2061,9 +2205,17 @@ function normalizedRecipe(item) {
   const override = recipeOverrideForItem(item);
   const recipe = override || item.recipe || extractRecipe(item.raw || {}, item.id, item.name);
   if (!recipe || typeof recipe !== 'object') return [];
-  return Object.entries(recipe)
-    .map(([ingredientId, amount]) => ({ ingredientId, amount: Number(amount) || 0 }))
+
+  const entries = Object.entries(recipe)
+    .map(([ingredientId, amount]) => ({ ingredientId: resolveItemReference(ingredientId), amount: Number(amount) || 0 }))
     .filter((entry) => entry.amount > 0 && !shouldIgnoreRecipeIngredient(entry.ingredientId));
+
+  const previousTierItemId = isWeapon(item) ? findPreviousTierItemId(item) : null;
+  if (previousTierItemId && !entries.some((entry) => entry.ingredientId === previousTierItemId)) {
+    entries.unshift({ ingredientId: previousTierItemId, amount: 1 });
+  }
+
+  return entries;
 }
 
 function shouldIgnoreRecipeIngredient(ingredientId) {
@@ -2109,7 +2261,7 @@ function renderDependencyTree(trees) {
           <span>${escapeHtml(tree.label)}</span>
           <span>${escapeHtml(getItem(tree.itemId)?.name || prettifyId(tree.itemId))} × ${tree.qty}</span>
         </div>
-        <small>${escapeHtml(tree.bench || 'No recipe')}</small>
+        <small>${escapeHtml(tree.bench || 'No recipe')}${tree.outputQty > 1 ? ` · ${tree.craftCount} craft${tree.craftCount > 1 ? 's' : ''} @ ${tree.outputQty}` : ''}</small>
       </summary>
       <div class="tree-children"></div>
     `;
@@ -2131,7 +2283,7 @@ function renderDependencyNode(node) {
   if (!node.children.length) {
     const leaf = document.createElement('div');
     leaf.className = 'tree-leaf';
-    leaf.innerHTML = `<strong>${escapeHtml(item?.name || prettifyId(node.itemId))} × ${node.qty}</strong> <span class="tree-bench">${escapeHtml(node.bench || 'Base material')}</span>`;
+    leaf.innerHTML = `<strong>${escapeHtml(item?.name || prettifyId(node.itemId))} × ${node.qty}</strong> <span class="tree-bench">${escapeHtml(node.bench || 'Base material')}${node.outputQty > 1 ? ` · ${node.craftCount} craft${node.craftCount > 1 ? 's' : ''} @ ${node.outputQty}` : ''}</span>`;
     return leaf;
   }
   const details = document.createElement('details');
@@ -2141,7 +2293,7 @@ function renderDependencyNode(node) {
       <div class="tree-title">
         <span>${escapeHtml(item?.name || prettifyId(node.itemId))} × ${node.qty}</span>
       </div>
-      <small>${escapeHtml(node.bench || 'Crafted')}</small>
+      <small>${escapeHtml(node.bench || 'Crafted')}${node.outputQty > 1 ? ` · ${node.craftCount} craft${node.craftCount > 1 ? 's' : ''} @ ${node.outputQty}` : ''}</small>
     </summary>
     <div class="tree-children"></div>
   `;
