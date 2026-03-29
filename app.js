@@ -603,7 +603,7 @@ function inferSeriesInfo(item) {
   const sources = [item.id, item.name].filter(Boolean);
   for (const source of sources) {
     const text = normalizeRomanGlyphs(String(source).trim());
-    const match = text.match(/^(.*?)(?:[ _-]|\s+)(i{1,3}|iv|v|vi|[1-9])$/i);
+    const match = text.match(/^(.*?)(?:[ _-]|\s+)(?:mk\.?|mark|tier)?\s*(i{1,3}|iv|v|vi|[1-9])$/i);
     if (!match) continue;
     const family = normalizeLooseKey(match[1]);
     const tier = parseTierToken(match[2]);
@@ -615,7 +615,7 @@ function inferSeriesInfo(item) {
 function inferSeriesInfoLoose(item) {
   if (!item) return null;
   const combined = normalizeRomanGlyphs(`${item.id || ''} ${item.name || ''}`.trim());
-  const match = combined.match(/\b([a-z][a-z0-9' -]+?)\s+(i{1,3}|iv|v|vi|[1-9])\b/i);
+  const match = combined.match(/\b([a-z][a-z0-9' -]+?)\s+(?:mk\.?|mark|tier)?\s*(i{1,3}|iv|v|vi|[1-9])\b/i);
   if (!match) return null;
   const family = normalizeLooseKey(match[1]);
   const tier = parseTierToken(match[2]);
@@ -691,11 +691,13 @@ function inferCraftOutputQuantity(item) {
     if (Number.isFinite(numeric) && numeric > 0) return numeric;
   }
   const normalizedId = normalizeLooseKey(item.id || item.name || '');
+  const normalizedText = normalizeLooseKey(`${item.id || ''} ${item.name || ''} ${item.type || ''} ${item.description || ''}`);
   if (ITEM_CRAFT_OUTPUT_OVERRIDES[normalizedId]) return ITEM_CRAFT_OUTPUT_OVERRIDES[normalizedId];
-  if (normalizedId.includes('heavy_ammo')) return ITEM_CRAFT_OUTPUT_OVERRIDES.heavy_ammo;
-  if (normalizedId.includes('medium_ammo')) return ITEM_CRAFT_OUTPUT_OVERRIDES.medium_ammo;
-  if (normalizedId.includes('light_ammo')) return ITEM_CRAFT_OUTPUT_OVERRIDES.light_ammo;
-  if (normalizedId.includes('shotgun_ammo')) return ITEM_CRAFT_OUTPUT_OVERRIDES.shotgun_ammo;
+  if (ITEM_CRAFT_OUTPUT_OVERRIDES[normalizedText]) return ITEM_CRAFT_OUTPUT_OVERRIDES[normalizedText];
+  if (normalizedId.includes('heavy_ammo') || normalizedText.includes('heavy_ammo')) return ITEM_CRAFT_OUTPUT_OVERRIDES.heavy_ammo;
+  if (normalizedId.includes('medium_ammo') || normalizedText.includes('medium_ammo')) return ITEM_CRAFT_OUTPUT_OVERRIDES.medium_ammo;
+  if (normalizedId.includes('light_ammo') || normalizedText.includes('light_ammo')) return ITEM_CRAFT_OUTPUT_OVERRIDES.light_ammo;
+  if (normalizedId.includes('shotgun_ammo') || normalizedText.includes('shotgun_ammo')) return ITEM_CRAFT_OUTPUT_OVERRIDES.shotgun_ammo;
   return 1;
 }
 
@@ -1180,13 +1182,17 @@ function mergeItemRecords(seedItem, liveItem) {
       mergedWithSeed: true,
     },
   };
+  const craftBatchSize = inferCraftOutputQuantity(merged);
+  if (craftBatchSize > 1 && (!Number.isFinite(Number(merged.stackSize)) || Number(merged.stackSize) < craftBatchSize)) {
+    merged.stackSize = craftBatchSize;
+  }
   return merged;
 }
 
 function normalizeLiveItem(raw) {
   const name = typeof raw.name === 'string' ? raw.name : raw.name?.en || prettifyId(raw.id);
   const imageFilename = resolveImageUrl(raw.imageFilename || raw.image || raw.imageUrl || raw.icon || raw.iconUrl || raw.images?.default || raw.images?.icon || raw.thumbnail || '');
-  return {
+  const item = {
     ...raw,
     id: raw.id,
     name,
@@ -1205,6 +1211,11 @@ function normalizeLiveItem(raw) {
     attachmentSlots: raw.attachmentSlots || raw.modSlots || raw.slots || null,
     raw,
   };
+  const craftBatchSize = inferCraftOutputQuantity(item);
+  if (craftBatchSize > 1 && (!Number.isFinite(Number(item.stackSize)) || Number(item.stackSize) < craftBatchSize)) {
+    item.stackSize = craftBatchSize;
+  }
+  return item;
 }
 
 function resolveImageUrl(value) {
@@ -2147,34 +2158,50 @@ function isAttachment(item) {
   return Boolean(inferAttachmentCategory(item));
 }
 
+function inferAttachmentCategoryFromText(text) {
+  const lowered = String(text || '').toLowerCase();
+  if (!lowered.trim()) return null;
+  if (/\bshotgun(?: |-)?mag(?:azine)?\b/.test(lowered)) return 'shotgun_magazine';
+  if (/\blight(?: |-)?mag(?:azine)?\b/.test(lowered)) return 'light_magazine';
+  if (/\bmedium(?: |-)?mag(?:azine)?\b/.test(lowered)) return 'medium_magazine';
+  if (/\bheavy(?: |-)?mag(?:azine)?\b/.test(lowered)) return 'heavy_magazine';
+  if (/\bshotgun(?: |-)?muzzle\b|\bchoke\b/.test(lowered)) return 'shotgun_muzzle';
+  if (/\bunderbarrel\b|\bunder barrel\b|\bforegrip\b|\bfore grip\b|\bgrip\b|\blaser\b|\bflash ?light\b|\btactical light\b/.test(lowered)) return 'underbarrel';
+  if (/\btech(?: |-)?mod\b|\bsplitter\b|\bbeam tuner\b|\barc mod\b/.test(lowered)) return 'tech';
+  if (/\bmuzzle\b|\bsilencer\b|\bsuppressor\b|\bbrake\b|\bcompensator\b|\bbarrel\b/.test(lowered)) return 'muzzle';
+  if (/\bextended(?: [a-z]+)? magazine\b|\bdrum magazine\b|\bmagazine\b/.test(lowered)) return 'magazine';
+  if (/\bstock\b/.test(lowered)) return 'stock';
+  if (/\bscope\b|\boptic\b|\bsight\b/.test(lowered)) return 'optic';
+  return null;
+}
+
 function inferAttachmentCategory(item) {
   if (!item || isBlueprint(item)) return null;
-  if (item.attachmentCategory) {
-    const normalized = normalizeAttachmentCategory(item.attachmentCategory);
-    if (normalized) return normalized;
-  }
   const raw = item.raw || {};
-  const category = raw.attachmentCategory || raw.modCategory || raw.slotCategory || raw.modSlot || raw.modType;
-  if (typeof category === 'string') {
-    const normalized = normalizeAttachmentCategory(category);
-    if (normalized) return normalized;
+  const text = `${item.name || ''} ${item.type || ''} ${item.description || ''}`.toLowerCase();
+  const textCategory = inferAttachmentCategoryFromText(text);
+
+  const explicitCandidates = [
+    item.attachmentCategory,
+    raw.attachmentCategory,
+    raw.modCategory,
+    raw.slotCategory,
+    raw.modSlot,
+    raw.modType,
+  ].filter((value) => typeof value === 'string' && value.trim());
+
+  for (const candidate of explicitCandidates) {
+    const normalized = normalizeAttachmentCategory(candidate);
+    if (!normalized) continue;
+    if (!textCategory) return normalized;
+    if (textCategory === normalized) return normalized;
+    if (textCategory === 'underbarrel' && normalized === 'muzzle') return textCategory;
+    if (textCategory === 'shotgun_muzzle' && normalized === 'muzzle') return textCategory;
+    if (textCategory.endsWith('_magazine') && normalized === 'magazine') return textCategory;
   }
-  const text = `${item.name} ${item.type} ${item.description}`.toLowerCase();
-  if (!hasAttachmentTypeHint(item) && !/\b(muzzle brake|compensator|silencer|suppressor|foregrip|grip|magazine|stock|optic|scope|sight|tech mod|splitter|barrel|choke)\b/.test(text)) {
-    return null;
-  }
-  if (/\bshotgun(?: |-)?mag(?:azine)?\b/.test(text)) return 'shotgun_magazine';
-  if (/\blight(?: |-)?mag(?:azine)?\b/.test(text)) return 'light_magazine';
-  if (/\bmedium(?: |-)?mag(?:azine)?\b/.test(text)) return 'medium_magazine';
-  if (/\bheavy(?: |-)?mag(?:azine)?\b/.test(text)) return 'heavy_magazine';
-  if (/\bshotgun(?: |-)?muzzle\b|\bchoke\b/.test(text)) return 'shotgun_muzzle';
-  if (/\bunderbarrel\b|\bgrip\b|\bforegrip\b|\bfore grip\b|\blaser\b/.test(text)) return 'underbarrel';
-  if (/\btech(?: |-)?mod\b|\bsplitter\b|\bbeam tuner\b|\barc mod\b/.test(text)) return 'tech';
-  if (/\bmuzzle\b|\bsilencer\b|\bsuppressor\b|\bbrake\b|\bcompensator\b|\bbarrel\b/.test(text)) return 'muzzle';
-  if (/\bextended(?: [a-z]+)? magazine\b|\bdrum magazine\b|\bmagazine\b/.test(text)) return 'magazine';
-  if (/\bstock\b/.test(text)) return 'stock';
-  if (/\bscope\b|\boptic\b|\bsight\b/.test(text)) return 'optic';
-  return null;
+
+  if (!hasAttachmentTypeHint(item) && !hasAttachmentNameHint(item) && !textCategory) return null;
+  return textCategory;
 }
 
 function normalizeAttachmentCategory(value) {
@@ -2187,7 +2214,7 @@ function normalizeAttachmentCategory(value) {
   if (lowered.includes('heavy mag')) return 'heavy_magazine';
   if (lowered.includes('underbarrel') || lowered.includes('under barrel') || lowered.includes('foregrip') || lowered.includes('fore grip') || lowered.includes('grip') || lowered.includes('laser')) return 'underbarrel';
   if (lowered.includes('tech')) return 'tech';
-  if (lowered.includes('magazine') || /mag/.test(lowered)) return 'magazine';
+  if (lowered.includes('magazine') || /\bmag\b/.test(lowered)) return 'magazine';
   if (lowered.includes('stock')) return 'stock';
   if (lowered.includes('optic') || lowered.includes('sight') || lowered.includes('scope')) return 'optic';
   if (lowered.includes('muzzle') || (lowered.includes('barrel') && !lowered.includes('underbarrel') && !lowered.includes('under barrel')) || lowered.includes('silencer') || lowered.includes('compensator') || lowered.includes('brake') || lowered.includes('suppressor') || lowered.includes('choke')) {
@@ -2264,17 +2291,23 @@ function isAttachmentCompatible(item, weapon, attachmentKind) {
   if (!attachmentCategoriesMatch(category, attachmentKind)) return false;
   const raw = item.raw || {};
   const candidates = [raw.compatibleWeapons, raw.compatibleItems, raw.supportedWeapons, raw.compatibility, raw.compatibleWith];
+  const weaponKeys = [weapon.id.toLowerCase(), weapon.name.toLowerCase(), normalizeLooseKey(weapon.name || '')].filter(Boolean);
+  let sawSpecificCompatibility = false;
   for (const candidate of candidates) {
     if (!candidate) continue;
     const values = Array.isArray(candidate)
-      ? candidate.map(String).map((value) => value.toLowerCase())
+      ? candidate.map(String).map((value) => value.toLowerCase().trim())
       : typeof candidate === 'string'
         ? candidate.toLowerCase().split(/[,;|]/).map((value) => value.trim())
-        : Object.keys(candidate).map((value) => value.toLowerCase());
-    const weaponKeys = [weapon.id.toLowerCase(), weapon.name.toLowerCase()];
-    return weaponKeys.some((key) => values.some((value) => value.includes(key) || key.includes(value)));
+        : Object.keys(candidate).map((value) => value.toLowerCase().trim());
+    const specificValues = values.filter((value) => value && !['weapon', 'weapons', 'all', 'any'].includes(value));
+    if (!specificValues.length) continue;
+    sawSpecificCompatibility = true;
+    if (weaponKeys.some((key) => specificValues.some((value) => value.includes(key) || key.includes(value) || normalizeLooseKey(value).includes(key) || key.includes(normalizeLooseKey(value))))) {
+      return true;
+    }
   }
-  return true;
+  return !sawSpecificCompatibility;
 }
 
 function attachmentCategoriesMatch(itemCategory, slotCategory) {
@@ -2441,7 +2474,9 @@ function buildCraftPlan(selections) {
   const collectCrafted = (node) => {
     if (!node) return;
     const item = getItem(node.itemId);
-    if (item && node.children?.length && !finalSelectionIds.has(node.itemId) && isIntermediateCraftItem(item, normalizedRecipe(item))) {
+    const normalizedId = normalizeLooseKey(node.itemId || item?.name || '');
+    const hasRecipeChildren = Boolean(node.children?.length);
+    if (item && hasRecipeChildren && !finalSelectionIds.has(node.itemId) && !BASE_ONLY_ITEM_IDS.has(normalizedId) && !isBlueprint(item)) {
       addToMap(craftedMap, node.itemId, node.qty, {
         depth: node.depth,
         recipeUses: 1,
@@ -2492,15 +2527,37 @@ function recipeOverrideForItem(item) {
     if (RECIPE_OVERRIDES[normalizedKey]) return RECIPE_OVERRIDES[normalizedKey];
   }
 
+  if (series?.family && series?.tier) {
+    const directSeriesKeys = [
+      `${series.family}_${numberToRoman(series.tier)}`,
+      `${series.family}_${series.tier}`,
+    ];
+    for (const key of directSeriesKeys) {
+      const normalizedKey = normalizeLooseKey(key);
+      if (RECIPE_OVERRIDES[normalizedKey]) return RECIPE_OVERRIDES[normalizedKey];
+    }
+  }
+
   const overrideEntries = Object.entries(RECIPE_OVERRIDES).sort((a, b) => b[0].length - a[0].length);
   for (const [overrideKey, recipe] of overrideEntries) {
     const normalizedOverrideKey = normalizeLooseKey(overrideKey);
     if ([...normalizedCandidates].some((candidate) => candidate === normalizedOverrideKey || candidate.includes(normalizedOverrideKey) || normalizedOverrideKey.includes(candidate))) {
       return recipe;
     }
+    if (series?.family && series?.tier) {
+      const overrideSeries = inferSeriesInfo({ id: overrideKey, name: overrideKey }) || inferSeriesInfoLoose({ id: overrideKey, name: overrideKey });
+      if (overrideSeries && overrideSeries.family === series.family && overrideSeries.tier === series.tier) {
+        return recipe;
+      }
+    }
   }
 
-  const seedMatch = seedData.find((seedItem) => normalizedCandidates.has(normalizeLooseKey(seedItem.id)) || normalizedCandidates.has(normalizeLooseKey(seedItem.name)));
+  const seedMatch = seedData.find((seedItem) => {
+    const seedSeries = inferSeriesInfo(seedItem) || inferSeriesInfoLoose(seedItem);
+    return normalizedCandidates.has(normalizeLooseKey(seedItem.id))
+      || normalizedCandidates.has(normalizeLooseKey(seedItem.name))
+      || (series?.family && series?.tier && seedSeries?.family === series.family && seedSeries?.tier === series.tier);
+  });
   if (seedMatch?.recipe) return seedMatch.recipe;
   return augmentMap[item.id]?.recipe || null;
 }
