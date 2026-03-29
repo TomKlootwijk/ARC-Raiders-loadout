@@ -803,14 +803,18 @@ function applyCatalog(items, source, updatedAt) {
 }
 
 function mergeCatalogWithSynthetic(rawItems) {
+  const normalizedSeed = seedData.map((item) => normalizeLiveItem(item));
+  const byId = new Map(normalizedSeed.map((item) => [item.id, item]));
   const normalizedLive = rawItems.map(normalizeLiveItem);
-  const byId = new Map(normalizedLive.map((item) => [item.id, item]));
 
-  for (const seedItem of seedData.map((item) => normalizeLiveItem(item))) {
-    if (!byId.has(seedItem.id)) {
-      byId.set(seedItem.id, seedItem);
+  normalizedLive.forEach((liveItem) => {
+    const seedItem = byId.get(liveItem.id);
+    if (!seedItem) {
+      byId.set(liveItem.id, liveItem);
+      return;
     }
-  }
+    byId.set(liveItem.id, mergeItemRecords(seedItem, liveItem));
+  });
 
   for (const augment of AUGMENTS) {
     const existing = byId.get(augment.id);
@@ -829,6 +833,39 @@ function mergeCatalogWithSynthetic(rawItems) {
   }
 
   return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function mergeItemRecords(seedItem, liveItem) {
+  const preferString = (primary, fallback, emptyValues = ['Unknown']) => {
+    if (typeof primary === 'string' && primary.trim() && !emptyValues.includes(primary.trim())) return primary;
+    if (typeof fallback === 'string' && fallback.trim()) return fallback;
+    return primary || fallback || '';
+  };
+
+  const merged = {
+    ...seedItem,
+    ...liveItem,
+    name: preferString(liveItem.name, seedItem.name),
+    description: preferString(liveItem.description, seedItem.description, []),
+    type: preferString(liveItem.type, seedItem.type),
+    rarity: preferString(liveItem.rarity, seedItem.rarity),
+    recipe: liveItem.recipe && Object.keys(liveItem.recipe).length ? liveItem.recipe : seedItem.recipe,
+    craftBench: liveItem.craftBench?.length ? liveItem.craftBench : seedItem.craftBench,
+    stationLevelRequired: liveItem.stationLevelRequired ?? seedItem.stationLevelRequired ?? null,
+    imageFilename: liveItem.imageFilename || seedItem.imageFilename || '',
+    shieldTier: liveItem.shieldTier || seedItem.shieldTier || null,
+    attachmentCategory: liveItem.attachmentCategory || seedItem.attachmentCategory || null,
+    attachmentSlots: liveItem.attachmentSlots || seedItem.attachmentSlots || null,
+    stackSize: Number(liveItem.stackSize || 0) > 0 ? liveItem.stackSize : seedItem.stackSize,
+    weightKg: Number.isFinite(Number(liveItem.weightKg)) && Number(liveItem.weightKg) > 0 ? Number(liveItem.weightKg) : seedItem.weightKg,
+    value: Number.isFinite(Number(liveItem.value)) && Number(liveItem.value) > 0 ? Number(liveItem.value) : seedItem.value,
+    raw: {
+      ...(seedItem.raw || {}),
+      ...(liveItem.raw || {}),
+      mergedWithSeed: true,
+    },
+  };
+  return merged;
 }
 
 function normalizeLiveItem(raw) {
@@ -1594,7 +1631,10 @@ function isBlueprint(item) {
 
 function hasKnownWeaponProfile(item) {
   const name = `${item?.name || ''}`.toLowerCase();
-  return Object.keys(WEAPON_SLOT_OVERRIDES).some((needle) => name.includes(needle));
+  return Object.keys(WEAPON_SLOT_OVERRIDES).some((needle) => {
+    const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+    return new RegExp(`\\b${escaped}\\b`, 'i').test(name);
+  });
 }
 
 function itemMetadataText(item) {
@@ -1620,6 +1660,23 @@ function hasAttachmentTypeHint(item) {
   return /\b(attachment|attachments|weapon mod|weapon mods|modification|modifications|tech mod|muzzle|underbarrel|magazine|stock|optic|scope|sight)\b/.test(text);
 }
 
+function hasAttachmentNameHint(item) {
+  const text = `${item?.name || ''} ${item?.type || ''} ${item?.description || ''}`.toLowerCase();
+  return /\b(muzzle brake|compensator|silencer|suppressor|foregrip|grip|magazine|stock|optic|scope|sight|tech mod|tech|splitter|barrel|choke)\b/.test(text);
+}
+
+function itemTypeText(item) {
+  const raw = item?.raw || {};
+  return [
+    item?.type || '',
+    raw.weaponClass || '',
+    raw.class || '',
+    raw.category || '',
+    raw.subType || '',
+    raw.type || '',
+  ].join(' ').toLowerCase();
+}
+
 function weaponFamilyLabel(item) {
   const text = `${itemTypeText(item)} ${(item?.name || '').toLowerCase()}`;
   if (text.includes('assault rifle')) return 'Assault Rifle';
@@ -1639,10 +1696,8 @@ function isWeapon(item) {
 
   const raw = item.raw || {};
   const text = itemMetadataText(item);
-  const explicitAttachmentMarker = Boolean(item.attachmentCategory || raw.attachmentCategory || raw.modCategory || raw.slotCategory || raw.modSlot || raw.modType || hasAttachmentTypeHint(item));
-  if (explicitAttachmentMarker) return false;
-
-  const explicitNonWeaponMarker = /\b(material|component|components|part|parts|ammo|blueprint|grenade|healing|quick use|utility|trap|trinket|consumable|augment|shield recharger)\b/.test(text);
+  const typeText = itemTypeText(item);
+  const hasWeaponClassHint = /\b(weapon|assault rifle|battle rifle|break-action rifle|hand cannon|pistol|submachine gun|smg|sniper rifle|shotgun|light machine ?gun|lmg|launcher)\b/.test(typeText);
   const hasWeaponStats = Boolean(
     item.isWeapon
     || raw.isWeapon
@@ -1651,13 +1706,20 @@ function isWeapon(item) {
     || raw.weaponStats
     || raw.damage
     || raw.fireRate
+    || raw.weaponClass
+    || raw.class === 'Weapon'
+    || raw.category === 'Weapon'
+    || raw.subType === 'Weapon'
+    || raw.type === 'Weapon'
     || raw.modSlots
     || item.attachmentSlots?.length
     || /\buses (light|medium|heavy|shotgun) ammo\b/.test(text)
     || /\benergy clip\b/.test(text)
   );
-  const hasWeaponClassHint = /\b(assault rifle|battle rifle|break-action rifle|hand cannon|pistol|submachine gun|smg|sniper rifle|shotgun|light machine ?gun|lmg|launcher)\b/.test(text);
+  const explicitAttachmentMarker = Boolean(item.attachmentCategory || raw.attachmentCategory || raw.modCategory || raw.slotCategory || raw.modSlot || raw.modType || hasAttachmentTypeHint(item) || hasAttachmentNameHint(item));
+  if (explicitAttachmentMarker && !hasWeaponClassHint && !hasWeaponStats) return false;
 
+  const explicitNonWeaponMarker = /\b(material|component|components|part|parts|ammo|blueprint|grenade|healing|quick use|utility|trap|trinket|consumable|augment|shield recharger|attachment|weapon mod|modification|muzzle|underbarrel|magazine|stock|optic|scope|sight)\b/.test(text);
   if (explicitNonWeaponMarker && !hasWeaponStats && !hasWeaponClassHint && !hasKnownWeaponProfile(item)) return false;
   return Boolean(hasKnownWeaponProfile(item) || hasWeaponStats || hasWeaponClassHint);
 }
@@ -1691,10 +1753,12 @@ function isAugmentItem(item) {
 }
 
 function isAttachment(item) {
-  if (!item || isBlueprint(item) || item.isWeapon || item.raw?.isWeapon || item.attachmentSlots?.length || item.raw?.modSlots) {
+  if (!item || isBlueprint(item) || isAugmentItem(item) || isShield(item)) return false;
+  if (item.isWeapon || item.raw?.isWeapon || (isWeapon(item) && !item.attachmentCategory && !item.raw?.attachmentCategory)) {
     return false;
   }
-  if (!hasAttachmentTypeHint(item) && !hasAttachmentNameHint(item) && !item.attachmentCategory && !item.raw?.attachmentCategory && !item.raw?.modCategory && !item.raw?.slotCategory && !item.raw?.modSlot && !item.raw?.modType) {
+  const hasAttachmentMetadata = Boolean(item.attachmentCategory || item.raw?.attachmentCategory || item.raw?.modCategory || item.raw?.slotCategory || item.raw?.modSlot || item.raw?.modType);
+  if (!hasAttachmentMetadata && !hasAttachmentTypeHint(item) && !hasAttachmentNameHint(item)) {
     return false;
   }
   return Boolean(inferAttachmentCategory(item));
