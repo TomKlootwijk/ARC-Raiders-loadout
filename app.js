@@ -1580,7 +1580,7 @@ function getAllowedItemsForContext(context) {
 
 function selectorGroupForItem(context, item) {
   if (context.kind === 'attachment') return ATTACHMENT_SLOT_LABELS[inferAttachmentCategory(item)] || 'Other';
-  if (context.kind === 'weapon') return item.type || 'Weapon';
+  if (context.kind === 'weapon') return weaponFamilyLabel(item);
   if (context.kind === 'shield') return shieldTier(item) || 'Shield';
   if (context.kind === 'augmented') return item.type || 'Item';
   return item.type || 'Item';
@@ -1597,54 +1597,69 @@ function hasKnownWeaponProfile(item) {
   return Object.keys(WEAPON_SLOT_OVERRIDES).some((needle) => name.includes(needle));
 }
 
-function isWeapon(item) {
-  if (!item || isShield(item) || isAugmentItem(item) || isBlueprint(item)) return false;
-  if (item.isWeapon || item.raw?.isWeapon || hasKnownWeaponProfile(item)) return true;
-
+function itemMetadataText(item) {
+  if (!item) return '';
   const raw = item.raw || {};
-  const categoriesText = [
+  const list = [
+    item.name || '',
+    item.description || '',
+    item.type || '',
+    raw.weaponClass || '',
+    raw.class || '',
+    raw.category || '',
+    raw.subType || '',
     ...(Array.isArray(raw.categories) ? raw.categories : []),
     ...(Array.isArray(raw.tags) ? raw.tags : []),
     ...(Array.isArray(raw.traits) ? raw.traits : []),
-  ].join(' ').toLowerCase();
-  const typeText = `${item.type} ${raw.weaponClass || ''} ${raw.class || ''} ${raw.category || ''} ${raw.subType || ''}`.toLowerCase();
-  const effectsText = Object.keys(raw.effects || {}).join(' ').toLowerCase();
-  const fullText = `${item.name} ${item.description || ''} ${typeText} ${categoriesText}`.toLowerCase();
+  ];
+  return list.join(' ').toLowerCase();
+}
+
+function hasAttachmentTypeHint(item) {
+  const text = itemMetadataText(item);
+  return /\b(attachment|attachments|weapon mod|weapon mods|modification|modifications|tech mod|muzzle|underbarrel|magazine|stock|optic|scope|sight)\b/.test(text);
+}
+
+function weaponFamilyLabel(item) {
+  const text = `${itemTypeText(item)} ${(item?.name || '').toLowerCase()}`;
+  if (text.includes('assault rifle')) return 'Assault Rifle';
+  if (text.includes('battle rifle') || text.includes('break-action rifle')) return 'Battle Rifle';
+  if (text.includes('hand cannon')) return 'Hand Cannon';
+  if (text.includes('submachine gun') || /\bsmg\b/.test(text)) return 'SMG';
+  if (text.includes('shotgun')) return 'Shotgun';
+  if (text.includes('sniper')) return 'Sniper Rifle';
+  if (text.includes('pistol')) return 'Pistol';
+  if (text.includes('light machine') || /\blmg\b/.test(text)) return 'LMG';
+  if (text.includes('launcher') || text.includes('special')) return 'Special';
+  return item?.type || 'Weapon';
+}
+
+function isWeapon(item) {
+  if (!item || isShield(item) || isAugmentItem(item) || isBlueprint(item)) return false;
+
+  const raw = item.raw || {};
+  const text = itemMetadataText(item);
+  const explicitAttachmentMarker = Boolean(item.attachmentCategory || raw.attachmentCategory || raw.modCategory || raw.slotCategory || raw.modSlot || raw.modType || hasAttachmentTypeHint(item));
+  if (explicitAttachmentMarker) return false;
+
+  const explicitNonWeaponMarker = /\b(material|component|components|part|parts|ammo|blueprint|grenade|healing|quick use|utility|trap|trinket|consumable|augment|shield recharger)\b/.test(text);
   const hasWeaponStats = Boolean(
-    raw.ammoType
+    item.isWeapon
+    || raw.isWeapon
+    || raw.ammoType
     || raw.magazineSize
     || raw.weaponStats
     || raw.damage
     || raw.fireRate
     || raw.modSlots
     || item.attachmentSlots?.length
-    || effectsText.includes('ammo type')
-    || effectsText.includes('magazine size')
-    || fullText.includes('uses light ammo')
-    || fullText.includes('uses medium ammo')
-    || fullText.includes('uses heavy ammo')
-    || fullText.includes('uses shotgun ammo')
+    || /\buses (light|medium|heavy|shotgun) ammo\b/.test(text)
+    || /\benergy clip\b/.test(text)
   );
-  if (hasWeaponStats) return true;
-  if (isAttachment(item)) return false;
-  return [
-    'assault rifle',
-    'battle rifle',
-    'break-action rifle',
-    'hand cannon',
-    'pistol',
-    'smg',
-    'submachine gun',
-    'sniper',
-    'shotgun',
-    'marksman',
-    'machine gun',
-    'light machinegun',
-    'carbine',
-    'special weapon',
-    'weapon',
-    'energy beam gun',
-  ].some((keyword) => fullText.includes(keyword));
+  const hasWeaponClassHint = /\b(assault rifle|battle rifle|break-action rifle|hand cannon|pistol|submachine gun|smg|sniper rifle|shotgun|light machine ?gun|lmg|launcher)\b/.test(text);
+
+  if (explicitNonWeaponMarker && !hasWeaponStats && !hasWeaponClassHint && !hasKnownWeaponProfile(item)) return false;
+  return Boolean(hasKnownWeaponProfile(item) || hasWeaponStats || hasWeaponClassHint);
 }
 
 function isShield(item) {
@@ -1679,6 +1694,9 @@ function isAttachment(item) {
   if (!item || isBlueprint(item) || item.isWeapon || item.raw?.isWeapon || item.attachmentSlots?.length || item.raw?.modSlots) {
     return false;
   }
+  if (!hasAttachmentTypeHint(item) && !hasAttachmentNameHint(item) && !item.attachmentCategory && !item.raw?.attachmentCategory && !item.raw?.modCategory && !item.raw?.slotCategory && !item.raw?.modSlot && !item.raw?.modType) {
+    return false;
+  }
   return Boolean(inferAttachmentCategory(item));
 }
 
@@ -1695,17 +1713,20 @@ function inferAttachmentCategory(item) {
     if (normalized) return normalized;
   }
   const text = `${item.name} ${item.type} ${item.description}`.toLowerCase();
-  if (/shotgun[ -]?mag/.test(text)) return 'shotgun_magazine';
-  if (/light[ -]?mag/.test(text)) return 'light_magazine';
-  if (/medium[ -]?mag/.test(text)) return 'medium_magazine';
-  if (/heavy[ -]?mag/.test(text)) return 'heavy_magazine';
-  if (/shotgun[ -]?muzzle|choke/.test(text)) return 'shotgun_muzzle';
-  if (/tech mod|splitter|beam tuner|arc mod|module/.test(text)) return 'tech';
-  if (/muzzle|silencer|suppressor|brake|compensator|barrel/.test(text)) return 'muzzle';
-  if (/grip|underbarrel|foregrip|laser/.test(text)) return 'underbarrel';
-  if (/mag|magazine|drum/.test(text)) return 'magazine';
-  if (/stock/.test(text)) return 'stock';
-  if (/scope|optic|sight/.test(text)) return 'optic';
+  if (!hasAttachmentTypeHint(item) && !/\b(muzzle brake|compensator|silencer|suppressor|foregrip|grip|magazine|stock|optic|scope|sight|tech mod|splitter|barrel|choke)\b/.test(text)) {
+    return null;
+  }
+  if (/\bshotgun(?: |-)?mag(?:azine)?\b/.test(text)) return 'shotgun_magazine';
+  if (/\blight(?: |-)?mag(?:azine)?\b/.test(text)) return 'light_magazine';
+  if (/\bmedium(?: |-)?mag(?:azine)?\b/.test(text)) return 'medium_magazine';
+  if (/\bheavy(?: |-)?mag(?:azine)?\b/.test(text)) return 'heavy_magazine';
+  if (/\bshotgun(?: |-)?muzzle\b|\bchoke\b/.test(text)) return 'shotgun_muzzle';
+  if (/\btech(?: |-)?mod\b|\bsplitter\b|\bbeam tuner\b|\barc mod\b/.test(text)) return 'tech';
+  if (/\bmuzzle\b|\bsilencer\b|\bsuppressor\b|\bbrake\b|\bcompensator\b|\bbarrel\b/.test(text)) return 'muzzle';
+  if (/\bunderbarrel\b|\bgrip\b|\bforegrip\b|\blaser\b/.test(text)) return 'underbarrel';
+  if (/\bextended(?: [a-z]+)? magazine\b|\bdrum magazine\b|\bmagazine\b/.test(text)) return 'magazine';
+  if (/\bstock\b/.test(text)) return 'stock';
+  if (/\bscope\b|\boptic\b|\bsight\b/.test(text)) return 'optic';
   return null;
 }
 
@@ -1719,7 +1740,7 @@ function normalizeAttachmentCategory(value) {
   if (lowered.includes('tech')) return 'tech';
   if (lowered.includes('muzzle') || lowered.includes('barrel') || lowered.includes('silencer') || lowered.includes('compensator')) return 'muzzle';
   if (lowered.includes('under') || lowered.includes('grip')) return 'underbarrel';
-  if (lowered.includes('mag')) return 'magazine';
+  if (lowered.includes('magazine') || /\bmag\b/.test(lowered)) return 'magazine';
   if (lowered.includes('stock')) return 'stock';
   if (lowered.includes('optic') || lowered.includes('sight') || lowered.includes('scope')) return 'optic';
   if (lowered.includes('special')) return 'special';
@@ -1788,7 +1809,7 @@ function orderAttachmentSlots(slots) {
 }
 
 function isAttachmentCompatible(item, weapon, attachmentKind) {
-  if (!item || !weapon) return false;
+  if (!item || !weapon || !isAttachment(item)) return false;
   const category = inferAttachmentCategory(item);
   if (!attachmentCategoriesMatch(category, attachmentKind)) return false;
   const raw = item.raw || {};
@@ -1898,6 +1919,13 @@ function renderCraftSummary() {
   renderDependencyTree(plan.trees);
 }
 
+function isIntermediateCraftItem(item) {
+  if (!item) return false;
+  if (isWeapon(item) || isShield(item) || isAugmentItem(item) || isAttachment(item)) return false;
+  const text = itemMetadataText(item);
+  return /\b(material|component|components|part|parts|circuitry|battery|magnet|processor|wire|wires|spring|converter|rod|alloy|canister|chemical|tape)\b/.test(text);
+}
+
 function buildCraftPlan(selections) {
   const baseMap = new Map();
   const craftedMap = new Map();
@@ -1945,13 +1973,28 @@ function buildCraftPlan(selections) {
   const baseParts = sortedMapEntries(baseMap).map(([itemId, qty]) => ({ itemId, qty }));
   const craftedIntermediates = sortedMapEntries(craftedMap)
     .filter(([itemId]) => !finalSelectionIds.has(itemId))
+    .filter(([itemId]) => isIntermediateCraftItem(getItem(itemId)))
     .map(([itemId, qty]) => ({ itemId, qty }));
   return { baseParts, craftedIntermediates, trees };
 }
 
+
+function recipeOverrideForItem(item) {
+  if (!item) return null;
+  const candidates = [
+    item.id,
+    slugify(item.name || '').replace(/-/g, '_'),
+    slugify(String(item.name || '').replace(/[()]/g, '')).replace(/-/g, '_'),
+  ].filter(Boolean);
+  for (const key of candidates) {
+    if (RECIPE_OVERRIDES[key]) return RECIPE_OVERRIDES[key];
+  }
+  return augmentMap[item.id]?.recipe || null;
+}
+
 function normalizedRecipe(item) {
   if (!item) return [];
-  const override = RECIPE_OVERRIDES[item.id] || RECIPE_OVERRIDES[slugify(item.name).replace(/-/g, '_')];
+  const override = recipeOverrideForItem(item);
   const recipe = override || item.recipe || extractRecipe(item.raw || {}, item.id, item.name);
   if (!recipe || typeof recipe !== 'object') return [];
   return Object.entries(recipe)
