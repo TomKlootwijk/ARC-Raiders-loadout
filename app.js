@@ -316,6 +316,20 @@ const ITEM_CRAFT_OUTPUT_OVERRIDES = {
   shotgun_ammo: 5,
 };
 
+const BASE_ONLY_ITEM_IDS = new Set([
+  'arc_motion_core',
+  'exodus_modules',
+  'matriarch_reactor',
+  'queen_reactor',
+  'leaper_pulse_unit',
+  'sentinel_firing_core',
+  'bombardier_cell',
+  'bastion_cell',
+  'flow_controller',
+  'humdifier',
+  'humidifier',
+]);
+
 const RECIPE_OVERRIDES = {
   mechanical_components: { metal_parts: 7, rubber_parts: 3 },
   electrical_components: { plastic_parts: 8, rubber_parts: 4 },
@@ -326,6 +340,7 @@ const RECIPE_OVERRIDES = {
   light_gun_parts: { simple_gun_parts: 4 },
   complex_gun_parts: { light_gun_parts: 2, medium_gun_parts: 2, heavy_gun_parts: 2 },
   power_rod: { advanced_electrical_components: 2, arc_circuitry: 2 },
+  magnetic_accelerator: { advanced_mechanical_components: 2, arc_motion_core: 2 },
   heavy_shield: { power_rod: 1, voltage_converter: 2 },
   heavy_shield_i: { power_rod: 1, voltage_converter: 2 },
   medium_shield: { battery: 4, arc_circuitry: 1 },
@@ -648,6 +663,7 @@ function buildSeedData() {
     makeItem('medium_gun_parts', 'Medium Gun Parts', 'Material', { weight: 0.35, value: 70, recipe: { simple_gun_parts: 4 } }),
     makeItem('complex_gun_parts', 'Complex Gun Parts', 'Material', { weight: 0.55, value: 130, recipe: { light_gun_parts: 2, medium_gun_parts: 2, heavy_gun_parts: 2 } }),
     makeItem('arc_alloy', 'ARC Alloy', 'Material', { weight: 0.2, value: 120 }),
+    makeItem('arc_motion_core', 'ARC Motion Core', 'Material', { weight: 0.7, value: 3000 }),
     makeItem('arc_circuitry', 'ARC Circuitry', 'Material', { weight: 0.3, value: 1000, recipe: { arc_alloy: 8 } }),
     makeItem('battery', 'Battery', 'Material', { weight: 0.2, value: 120 }),
     makeItem('voltage_converter', 'Voltage Converter', 'Material', { weight: 0.25, value: 850 }),
@@ -2275,11 +2291,13 @@ function renderCraftSummary() {
   renderDependencyTree(plan.trees);
 }
 
-function isIntermediateCraftItem(item) {
+function isIntermediateCraftItem(item, recipe = null) {
   if (!item) return false;
-  if (isWeapon(item) || isShield(item) || isAugmentItem(item) || isAttachment(item)) return false;
-  const text = itemMetadataText(item);
-  return /\b(material|component|components|part|parts|circuitry|battery|magnet|processor|wire|wires|spring|converter|rod|alloy|canister|chemical|tape)\b/.test(text);
+  if (isWeapon(item) || isShield(item) || isAugmentItem(item) || isAttachment(item) || isBlueprint(item)) return false;
+  const normalizedId = normalizeLooseKey(item.id || item.name || '');
+  if (BASE_ONLY_ITEM_IDS.has(normalizedId)) return false;
+  const resolvedRecipe = Array.isArray(recipe) ? recipe : normalizedRecipe(item);
+  return resolvedRecipe.length > 0;
 }
 
 function buildCraftPlan(selections) {
@@ -2325,7 +2343,7 @@ function buildCraftPlan(selections) {
       return node;
     }
 
-    if (includeInCrafted && isIntermediateCraftItem(item)) {
+    if (includeInCrafted && isIntermediateCraftItem(item, recipe)) {
       addToMap(craftedMap, itemId, craftCount, { depth, directUses: 1, totalUses: craftCount });
     }
     recipe.forEach(({ ingredientId, amount }) => {
@@ -2343,7 +2361,7 @@ function buildCraftPlan(selections) {
   const baseParts = sortedMapEntries(baseMap).map(([itemId, entry]) => ({ itemId, qty: entry.qty }));
   const craftedIntermediates = sortedMapEntries(craftedMap)
     .filter(([itemId]) => !finalSelectionIds.has(itemId))
-    .filter(([itemId]) => isIntermediateCraftItem(getItem(itemId)))
+    .filter(([itemId]) => isIntermediateCraftItem(getItem(itemId), normalizedRecipe(getItem(itemId))))
     .map(([itemId, entry]) => ({
       itemId,
       qty: entry.qty,
@@ -2376,6 +2394,8 @@ function recipeOverrideForItem(item) {
 
 function normalizedRecipe(item) {
   if (!item) return [];
+  const normalizedId = normalizeLooseKey(item.id || item.name || '');
+  if (BASE_ONLY_ITEM_IDS.has(normalizedId)) return [];
   const override = recipeOverrideForItem(item);
   const recipe = override || item.recipe || extractRecipe(item.raw || {}, item.id, item.name);
   if (!recipe || typeof recipe !== 'object') return [];
