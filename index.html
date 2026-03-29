@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#07101c" />
+    <title>ARC Raiders Loadout Planner</title>
+    <meta
+      name="description"
+      content="ARC Raiders loadout planner with augment-aware slot layouts, attachment selection, crafting breakdowns, and local saved presets."
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="page-header card">
+        <div>
+          <p class="eyebrow">Unofficial planner</p>
+          <h1>ARC Raiders Loadout Planner</h1>
+          <p class="subtle">
+            Click any slot to pick valid items, swap augments to reshape the panel,
+            and see the recursive craft bill for the whole loadout.
+          </p>
+        </div>
+        <div class="header-actions">
+          <button id="refreshCatalogBtn" class="ghost-btn" type="button">Refresh live catalog</button>
+          <span id="dataStatus" class="status-pill">Loading catalog…</span>
+        </div>
+      </header>
+
+      <section class="toolbar card">
+        <div class="toolbar-grid">
+          <label class="field">
+            <span>Augment</span>
+            <select id="augmentSelect"></select>
+          </label>
+
+          <label class="field field--wide">
+            <span>Loadout name</span>
+            <input id="loadoutNameInput" type="text" maxlength="80" placeholder="My solo loot run" />
+          </label>
+
+          <div class="toolbar-actions">
+            <button id="saveLoadoutBtn" class="primary-btn" type="button">Save</button>
+            <button id="cloneLoadoutBtn" class="ghost-btn" type="button">Clone</button>
+            <button id="exportLoadoutBtn" class="ghost-btn" type="button">Export JSON</button>
+          </div>
+        </div>
+
+        <div class="toolbar-grid toolbar-grid--secondary">
+          <label class="field field--wide">
+            <span>Saved loadouts</span>
+            <select id="savedLoadoutSelect"></select>
+          </label>
+
+          <div class="toolbar-actions">
+            <button id="loadSavedBtn" class="ghost-btn" type="button">Load</button>
+            <button id="deleteSavedBtn" class="danger-btn" type="button">Delete</button>
+            <label class="ghost-btn upload-btn" for="importLoadoutInput">Import JSON</label>
+            <input id="importLoadoutInput" type="file" accept="application/json" hidden />
+          </div>
+        </div>
+      </section>
+
+      <main class="planner-grid">
+        <section class="board-card card">
+          <div class="board-topline">
+            <div class="totals">
+              <div>
+                <span class="tiny-label">Weight</span>
+                <strong id="weightValue">0.0 / 0.0</strong>
+              </div>
+              <div>
+                <span class="tiny-label">Value</span>
+                <strong id="valueValue">0</strong>
+              </div>
+              <div>
+                <span class="tiny-label">Selected items</span>
+                <strong id="selectedItemCount">0</strong>
+              </div>
+            </div>
+            <div id="augmentMeta" class="augment-meta"></div>
+          </div>
+
+          <div class="mobile-board-nav" id="mobileBoardNav">
+            <button type="button" class="mobile-board-tab is-active" data-mobile-panel="equipment">Equipment</button>
+            <button type="button" class="mobile-board-tab" data-mobile-panel="backpack">Backpack</button>
+            <button type="button" class="mobile-board-tab" data-mobile-panel="utility">Utility</button>
+          </div>
+
+          <div class="loadout-board" id="loadoutBoard" data-mobile-panel="equipment">
+            <div class="board-bg"></div>
+
+            <section class="column equipment-column" data-board-panel="equipment">
+              <div class="section-title-block">
+                <h2>Loadout</h2>
+                <p id="equipmentSubtitle" class="section-subtitle"></p>
+              </div>
+              <h3 class="section-title">Equipment</h3>
+
+              <div class="equipment-top-row">
+                <div id="augmentSlotMount"></div>
+                <div id="shieldSlotMount"></div>
+              </div>
+
+              <div id="weaponSlotsMount" class="weapon-stack"></div>
+            </section>
+
+            <section class="column backpack-column" data-board-panel="backpack">
+              <div class="section-header-inline">
+                <h3 class="section-title">Backpack</h3>
+                <span id="backpackCountLabel" class="count-label"></span>
+              </div>
+              <div id="backpackGrid" class="slot-grid slot-grid--backpack"></div>
+            </section>
+
+            <section class="column utility-column" data-board-panel="utility">
+              <div class="section-header-inline">
+                <h3 class="section-title">Quick Use</h3>
+                <span id="quickUseCountLabel" class="count-label"></span>
+              </div>
+              <div id="quickUseGrid" class="slot-grid slot-grid--quick"></div>
+
+              <div id="integratedToolMount" class="integrated-tool-block"></div>
+
+              <div id="augmentSlotsMount" class="augment-slots-block"></div>
+
+              <div class="section-header-inline section-header-inline--safe">
+                <h3 class="section-title">Safe Pocket</h3>
+                <span id="safePocketCountLabel" class="count-label"></span>
+              </div>
+              <div id="safePocketGrid" class="slot-grid slot-grid--safe"></div>
+            </section>
+          </div>
+
+          <div id="overflowNotice" class="overflow-notice hidden"></div>
+        </section>
+      </main>
+
+      <section class="craft-card card">
+        <div class="craft-header">
+          <div>
+            <p class="eyebrow">Crafting breakdown</p>
+            <h2>What you need for this loadout</h2>
+            <p class="subtle">
+              Recursive craft math only. The planner expands recipes into crafted intermediates and base materials.
+            </p>
+          </div>
+          <div class="toolbar-actions">
+            <button id="copyBasePartsBtn" class="ghost-btn" type="button">Copy base parts</button>
+            <button id="copyFullPlanBtn" class="ghost-btn" type="button">Copy full plan</button>
+          </div>
+        </div>
+
+        <div class="craft-panels">
+          <section>
+            <div class="craft-panel-title-row">
+              <h3>Base gather list</h3>
+              <span id="basePartCount" class="status-pill status-pill--muted">0 items</span>
+            </div>
+            <div id="basePartsList" class="token-list"></div>
+          </section>
+
+          <section>
+            <div class="craft-panel-title-row">
+              <h3>Crafted along the way</h3>
+              <span id="craftedPartCount" class="status-pill status-pill--muted">0 items</span>
+            </div>
+            <div id="craftedPartsList" class="token-list token-list--secondary"></div>
+          </section>
+        </div>
+
+        <section class="dependency-section">
+          <div class="craft-panel-title-row">
+            <h3>Per-slot dependency tree</h3>
+            <span class="status-pill status-pill--muted">Click to expand</span>
+          </div>
+          <div id="dependencyTree" class="dependency-tree"></div>
+        </section>
+      </section>
+    </div>
+
+    <div id="selectorModal" class="modal hidden" aria-hidden="true">
+      <div class="modal-backdrop" data-close-modal="true"></div>
+      <div class="modal-card card" role="dialog" aria-modal="true" aria-labelledby="selectorTitle">
+        <div class="modal-header">
+          <div>
+            <p class="eyebrow">Pick an item</p>
+            <h2 id="selectorTitle">Select</h2>
+            <p id="selectorSubtitle" class="subtle"></p>
+          </div>
+          <button id="closeModalBtn" class="ghost-btn icon-btn" type="button" aria-label="Close selector">✕</button>
+        </div>
+
+        <div class="modal-controls">
+          <label class="field field--wide">
+            <span>Search</span>
+            <input id="selectorSearchInput" type="search" placeholder="Search by name, rarity, type, or recipe part" />
+          </label>
+          <button id="clearSlotBtn" class="danger-btn" type="button">Clear slot</button>
+        </div>
+
+        <div id="selectorFilterChips" class="filter-chips"></div>
+        <div id="selectorResults" class="selector-results"></div>
+      </div>
+    </div>
+
+    <template id="slotTemplate">
+      <button class="slot-button" type="button">
+        <div class="slot-art"></div>
+        <div class="slot-content">
+          <span class="slot-label"></span>
+          <strong class="slot-name"></strong>
+        </div>
+        <div class="slot-footer">
+          <span class="slot-qty"></span>
+          <span class="slot-meta"></span>
+        </div>
+      </button>
+    </template>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
