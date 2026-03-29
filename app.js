@@ -701,6 +701,90 @@ function inferCraftOutputQuantity(item) {
   return 1;
 }
 
+function syntheticRarityForTier(tier) {
+  if (tier >= 4) return 'Legendary';
+  if (tier === 3) return 'Epic';
+  if (tier === 2) return 'Rare';
+  return 'Uncommon';
+}
+
+function synthesizeOverrideBackedItems(existingItems) {
+  const syntheticWeaponTypes = {
+    anvil: 'Hand Cannon',
+    aphelion: 'Sniper Rifle',
+    arpeggio: 'Battle Rifle',
+    bettina: 'Sniper Rifle',
+    bobcat: 'SMG',
+    burletta: 'Pistol',
+    ferro: 'Battle Rifle',
+    hairpin: 'Pistol',
+    hullcracker: 'Sniper Rifle',
+    il_toro: 'Shotgun',
+    kettle: 'Assault Rifle',
+    osprey: 'Battle Rifle',
+    rattler: 'Assault Rifle',
+    renegade: 'Battle Rifle',
+    stitcher: 'SMG',
+    tempest: 'Battle Rifle',
+    torrente: 'Battle Rifle',
+    venator: 'Pistol',
+    vulcano: 'Shotgun',
+  };
+  const romanMap = { i: 1, ii: 2, iii: 3, iv: 4, v: 5, vi: 6 };
+  const localParseTier = (token) => {
+    const normalized = String(token || '').trim().toLowerCase();
+    if (romanMap[normalized]) return romanMap[normalized];
+    const numeric = Number(normalized);
+    return Number.isFinite(numeric) && numeric > 0 ? numeric : null;
+  };
+  const localInferSeries = (value) => {
+    const text = normalizeRomanGlyphs(String(value || '').trim());
+    const match = text.match(/^(.*?)(?:[ _-]|\s+)(?:mk\.?|mark|tier)?\s*(i{1,3}|iv|v|vi|[1-9])$/i);
+    if (!match) return null;
+    const family = normalizeLooseKey(match[1]);
+    const tier = localParseTier(match[2]);
+    return family && tier ? { family, tier } : null;
+  };
+
+  const existingIds = new Set(existingItems.map((item) => normalizeLooseKey(item.id)));
+  const extras = [];
+  Object.entries(RECIPE_OVERRIDES).forEach(([overrideId, recipe]) => {
+    const normalizedId = normalizeLooseKey(overrideId);
+    if (!normalizedId || existingIds.has(normalizedId)) return;
+
+    const series = localInferSeries(normalizedId);
+    const family = series?.family || '';
+    const attachmentCategory = inferAttachmentCategoryFromText(normalizedId);
+
+    let item = null;
+    if (family && syntheticWeaponTypes[family]) {
+      const romanTier = numberToRoman(series.tier || 1).toUpperCase() || String(series.tier || 1);
+      item = makeItem(normalizedId, `${prettifyId(family)} ${romanTier}`, syntheticWeaponTypes[family], {
+        rarity: syntheticRarityForTier(series.tier || 1),
+        recipe,
+        attachmentSlots: WEAPON_SLOT_OVERRIDES[family] || null,
+        description: 'Synthetic fallback recipe item.',
+      });
+    } else if (attachmentCategory) {
+      item = makeItem(normalizedId, prettifyId(normalizedId), 'Attachment', {
+        rarity: normalizedId.includes('_iii') ? 'Epic' : normalizedId.includes('_ii') ? 'Rare' : 'Uncommon',
+        recipe,
+        attachmentCategory,
+        description: 'Synthetic fallback attachment.',
+      });
+    } else {
+      item = makeItem(normalizedId, prettifyId(normalizedId), 'Material', {
+        recipe,
+        description: 'Synthetic fallback material.',
+      });
+    }
+
+    extras.push(item);
+    existingIds.add(normalizedId);
+  });
+  return extras;
+}
+
 function buildSeedData() {
   const materials = [
     makeItem('metal_parts', 'Metal Parts', 'Material', { image: '', weight: 0.2, value: 8 }),
@@ -837,7 +921,8 @@ function buildSeedData() {
     recipe: augment.recipe || undefined,
   }));
 
-  return [...materials, ...gear, ...attachments, ...weapons, ...augmentItems];
+  const seeded = [...materials, ...gear, ...attachments, ...weapons, ...augmentItems];
+  return [...seeded, ...synthesizeOverrideBackedItems(seeded)];
 }
 
 function makeItem(id, name, type, options = {}) {
@@ -858,7 +943,19 @@ function makeItem(id, name, type, options = {}) {
     attachmentCategory: options.attachmentCategory || null,
     attachmentSlots: options.attachmentSlots || null,
     updatedAt: options.updatedAt || null,
-    raw: { seed: true, attachmentSlots: options.attachmentSlots || null },
+    raw: {
+      seed: true,
+      recipe: options.recipe || null,
+      craftBench: options.craftBench || [],
+      attachmentCategory: options.attachmentCategory || null,
+      attachmentSlots: options.attachmentSlots || null,
+      stackSize: options.stackSize ?? 1,
+      weightKg: options.weight ?? 0,
+      value: options.value ?? 0,
+      rarity: options.rarity || 'Common',
+      type,
+      name,
+    },
   };
 }
 
@@ -2541,7 +2638,7 @@ function recipeOverrideForItem(item) {
   const overrideEntries = Object.entries(RECIPE_OVERRIDES).sort((a, b) => b[0].length - a[0].length);
   for (const [overrideKey, recipe] of overrideEntries) {
     const normalizedOverrideKey = normalizeLooseKey(overrideKey);
-    if ([...normalizedCandidates].some((candidate) => candidate === normalizedOverrideKey || candidate.includes(normalizedOverrideKey) || normalizedOverrideKey.includes(candidate))) {
+    if ([...normalizedCandidates].some((candidate) => candidate === normalizedOverrideKey)) {
       return recipe;
     }
     if (series?.family && series?.tier) {
