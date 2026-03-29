@@ -45,7 +45,7 @@ If the live catalog is unavailable, the app falls back to a built-in seed datase
 - `index.html` – app shell
 - `styles.css` – styling
 - `app.js` – planner logic, catalog loader, save/load, crafting recursion
-- `assets/` – background references from the supplied screenshots
+- `assets/` – reference screenshots kept only as source material
 
 ## Deploy to GitHub Pages
 
@@ -74,7 +74,7 @@ Then open `http://localhost:8000`.
 - This planner uses community-maintained data sources.
 - Some live item metadata can lag behind the game, especially newly added or renamed equipment.
 - Augment slot definitions are hard-coded in the app so the board layout remains stable even when catalog data is incomplete.
-- The built-in recipe overrides intentionally prefer direct crafting recipes over recycle chains for common materials and weapon mods.
+- The built-in recipe overrides intentionally prefer direct crafting recipes over recycle chains for common materials, weapons, and weapon mods.
 - Backpack slots now allow general items, including weapons and shields, though dragging an already-modded weapon from a weapon slot into a backpack slot is still a future enhancement.
 
 ## Customizing the item rules
@@ -90,4 +90,4 @@ If you want tighter filtering for specific weapons or attachment compatibility, 
 
 ## Background art
 
-The board uses the supplied ARC Raiders loadout screenshots as a low-opacity visual reference background and overlays interactive slots on top.
+The live planner no longer renders the screenshot as a background image. The reference screenshots are kept in `assets/` only as development source material.

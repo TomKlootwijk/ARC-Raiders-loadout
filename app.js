@@ -285,6 +285,8 @@ const ATTACHMENT_SLOT_LABELS = {
   special: 'Special',
 };
 
+const SLOT_DISPLAY_ORDER = ['muzzle', 'shotgun_muzzle', 'underbarrel', 'light_magazine', 'medium_magazine', 'heavy_magazine', 'shotgun_magazine', 'magazine', 'stock', 'tech', 'optic', 'special'];
+
 const WEAPON_SLOT_OVERRIDES = {
   'anvil': ['muzzle', 'tech'],
   'kettle': ['muzzle', 'underbarrel', 'light_magazine', 'stock'],
@@ -329,6 +331,14 @@ const RECIPE_OVERRIDES = {
   looting_mk_2: { electrical_components: 2, magnet: 3 },
   combat_mk_2: { electrical_components: 2, magnet: 3 },
   tactical_mk_2: { electrical_components: 2, magnet: 3 },
+  stitcher_i: { metal_parts: 8, rubber_parts: 4 },
+  stitcher_ii: { stitcher_i: 1, metal_parts: 8, rubber_parts: 12 },
+  stitcher_iii: { stitcher_ii: 1, metal_parts: 10, simple_gun_parts: 1 },
+  stitcher_iv: { stitcher_iii: 1, mechanical_components: 3, simple_gun_parts: 1 },
+  burletta_i: { mechanical_components: 3, simple_gun_parts: 3 },
+  burletta_ii: { burletta_i: 1, mechanical_components: 3, simple_gun_parts: 1 },
+  burletta_iii: { burletta_ii: 1, mechanical_components: 3, simple_gun_parts: 1 },
+  burletta_iv: { burletta_iii: 1, mechanical_components: 4, simple_gun_parts: 1 },
   anvil_i: { mechanical_components: 5, simple_gun_parts: 6 },
   anvil_ii: { anvil_i: 1, mechanical_components: 3, simple_gun_parts: 1 },
   anvil_iii: { anvil_ii: 1, mechanical_components: 4, heavy_gun_parts: 1 },
@@ -483,6 +493,15 @@ function buildSeedData() {
     makeItem('anvil_i', 'Anvil I', 'Hand Cannon', { weight: 5.6, value: 1100, rarity: 'Uncommon', recipe: { mechanical_components: 4, heavy_gun_parts: 1 }, attachmentSlots: ['muzzle', 'tech'] }),
     makeItem('anvil_ii', 'Anvil II', 'Hand Cannon', { weight: 5.8, value: 2100, rarity: 'Rare', recipe: { anvil_i: 1, mechanical_components: 4, heavy_gun_parts: 1 }, attachmentSlots: ['muzzle', 'tech'] }),
     makeItem('anvil_iii', 'Anvil III', 'Hand Cannon', { weight: 6.0, value: 3600, rarity: 'Epic', recipe: { anvil_ii: 1, advanced_mechanical_components: 1, heavy_gun_parts: 2 }, attachmentSlots: ['muzzle', 'tech'] }),
+    makeItem('anvil_iv', 'Anvil IV', 'Hand Cannon', { weight: 6.2, value: 5000, rarity: 'Legendary', recipe: { anvil_iii: 1, mechanical_components: 4, heavy_gun_parts: 1 }, attachmentSlots: ['muzzle', 'tech'] }),
+    makeItem('burletta_i', 'Burletta I', 'Pistol', { weight: 4.0, value: 2900, rarity: 'Uncommon', recipe: { mechanical_components: 3, simple_gun_parts: 3 }, attachmentSlots: ['muzzle', 'light_magazine'] }),
+    makeItem('burletta_ii', 'Burletta II', 'Pistol', { weight: 4.0, value: 5000, rarity: 'Rare', recipe: { burletta_i: 1, mechanical_components: 3, simple_gun_parts: 1 }, attachmentSlots: ['muzzle', 'light_magazine'] }),
+    makeItem('burletta_iii', 'Burletta III', 'Pistol', { weight: 4.0, value: 7000, rarity: 'Epic', recipe: { burletta_ii: 1, mechanical_components: 3, simple_gun_parts: 1 }, attachmentSlots: ['muzzle', 'light_magazine'] }),
+    makeItem('burletta_iv', 'Burletta IV', 'Pistol', { weight: 4.0, value: 10000, rarity: 'Legendary', recipe: { burletta_iii: 1, mechanical_components: 4, simple_gun_parts: 1 }, attachmentSlots: ['muzzle', 'light_magazine'] }),
+    makeItem('stitcher_i', 'Stitcher I', 'SMG', { weight: 5.0, value: 800, rarity: 'Common', recipe: { metal_parts: 8, rubber_parts: 4 }, attachmentSlots: ['muzzle', 'underbarrel', 'light_magazine', 'stock'] }),
+    makeItem('stitcher_ii', 'Stitcher II', 'SMG', { weight: 5.0, value: 2000, rarity: 'Uncommon', recipe: { stitcher_i: 1, metal_parts: 8, rubber_parts: 12 }, attachmentSlots: ['muzzle', 'underbarrel', 'light_magazine', 'stock'] }),
+    makeItem('stitcher_iii', 'Stitcher III', 'SMG', { weight: 5.0, value: 3000, rarity: 'Rare', recipe: { stitcher_ii: 1, metal_parts: 10, simple_gun_parts: 1 }, attachmentSlots: ['muzzle', 'underbarrel', 'light_magazine', 'stock'] }),
+    makeItem('stitcher_iv', 'Stitcher IV', 'SMG', { weight: 5.0, value: 5000, rarity: 'Epic', recipe: { stitcher_iii: 1, mechanical_components: 3, simple_gun_parts: 1 }, attachmentSlots: ['muzzle', 'underbarrel', 'light_magazine', 'stock'] }),
     makeItem('rattler_i', 'Rattler I', 'Assault Rifle', { weight: 4.8, value: 1200, rarity: 'Uncommon', recipe: { metal_parts: 16, rubber_parts: 12 }, attachmentSlots: ['muzzle', 'underbarrel', 'magazine', 'stock'] }),
     makeItem('rattler_ii', 'Rattler II', 'Assault Rifle', { weight: 4.9, value: 2200, rarity: 'Rare', recipe: { rattler_i: 1, metal_parts: 10, rubber_parts: 10 }, attachmentSlots: ['muzzle', 'underbarrel', 'magazine', 'stock'] }),
     makeItem('bettina_i', 'Bettina I', 'Sniper Rifle', { weight: 8.2, value: 2200, rarity: 'Rare', recipe: { advanced_mechanical_components: 1, heavy_gun_parts: 2 }, attachmentSlots: ['muzzle', 'underbarrel', 'magazine', 'stock'] }),
@@ -1567,20 +1586,44 @@ function selectorGroupForItem(context, item) {
   return item.type || 'Item';
 }
 
-function isWeapon(item) {
-  if (!item || isShield(item) || isAugmentItem(item)) return false;
-  if (item.isWeapon || item.raw?.isWeapon) return true;
+function isBlueprint(item) {
+  if (!item) return false;
+  const text = `${item.type || ''} ${item.name || ''} ${item.description || ''}`.toLowerCase();
+  return text.includes('blueprint');
+}
 
-  const typeText = `${item.type} ${item.raw?.weaponClass || ''}`.toLowerCase();
-  const effectsText = Object.keys(item.raw?.effects || {}).join(' ').toLowerCase();
+function hasKnownWeaponProfile(item) {
+  const name = `${item?.name || ''}`.toLowerCase();
+  return Object.keys(WEAPON_SLOT_OVERRIDES).some((needle) => name.includes(needle));
+}
+
+function isWeapon(item) {
+  if (!item || isShield(item) || isAugmentItem(item) || isBlueprint(item)) return false;
+  if (item.isWeapon || item.raw?.isWeapon || hasKnownWeaponProfile(item)) return true;
+
+  const raw = item.raw || {};
+  const categoriesText = [
+    ...(Array.isArray(raw.categories) ? raw.categories : []),
+    ...(Array.isArray(raw.tags) ? raw.tags : []),
+    ...(Array.isArray(raw.traits) ? raw.traits : []),
+  ].join(' ').toLowerCase();
+  const typeText = `${item.type} ${raw.weaponClass || ''} ${raw.class || ''} ${raw.category || ''} ${raw.subType || ''}`.toLowerCase();
+  const effectsText = Object.keys(raw.effects || {}).join(' ').toLowerCase();
+  const fullText = `${item.name} ${item.description || ''} ${typeText} ${categoriesText}`.toLowerCase();
   const hasWeaponStats = Boolean(
-    item.raw?.ammoType
-    || item.raw?.magazineSize
-    || item.raw?.weaponStats
-    || item.raw?.modSlots
+    raw.ammoType
+    || raw.magazineSize
+    || raw.weaponStats
+    || raw.damage
+    || raw.fireRate
+    || raw.modSlots
     || item.attachmentSlots?.length
     || effectsText.includes('ammo type')
     || effectsText.includes('magazine size')
+    || fullText.includes('uses light ammo')
+    || fullText.includes('uses medium ammo')
+    || fullText.includes('uses heavy ammo')
+    || fullText.includes('uses shotgun ammo')
   );
   if (hasWeaponStats) return true;
   if (isAttachment(item)) return false;
@@ -1591,6 +1634,7 @@ function isWeapon(item) {
     'hand cannon',
     'pistol',
     'smg',
+    'submachine gun',
     'sniper',
     'shotgun',
     'marksman',
@@ -1598,10 +1642,9 @@ function isWeapon(item) {
     'light machinegun',
     'carbine',
     'special weapon',
-    'special',
     'weapon',
     'energy beam gun',
-  ].some((keyword) => typeText.includes(keyword));
+  ].some((keyword) => fullText.includes(keyword));
 }
 
 function isShield(item) {
@@ -1633,13 +1676,14 @@ function isAugmentItem(item) {
 }
 
 function isAttachment(item) {
-  if (!item || item.isWeapon || item.raw?.isWeapon || item.attachmentSlots?.length || item.raw?.modSlots) {
+  if (!item || isBlueprint(item) || item.isWeapon || item.raw?.isWeapon || item.attachmentSlots?.length || item.raw?.modSlots) {
     return false;
   }
   return Boolean(inferAttachmentCategory(item));
 }
 
 function inferAttachmentCategory(item) {
+  if (!item || isBlueprint(item)) return null;
   if (item.attachmentCategory) {
     const normalized = normalizeAttachmentCategory(item.attachmentCategory);
     if (normalized) return normalized;
@@ -1685,20 +1729,21 @@ function normalizeAttachmentCategory(value) {
 function guessAttachmentSlotsForWeapon(weapon) {
   if (!weapon) return [];
   const raw = weapon.raw || {};
-  const direct = raw.attachmentSlots || raw.modSlots || raw.slots || weapon.attachmentSlots;
-  const parsed = parseAttachmentSlots(direct);
-  if (parsed.length) return parsed;
 
   const nameText = weapon.name.toLowerCase();
   for (const [needle, slots] of Object.entries(WEAPON_SLOT_OVERRIDES)) {
-    if (nameText.includes(needle)) return slots;
+    if (nameText.includes(needle)) return orderAttachmentSlots(slots);
   }
+
+  const direct = raw.attachmentSlots || raw.modSlots || raw.slots || weapon.attachmentSlots;
+  const parsed = parseAttachmentSlots(direct);
+  if (parsed.length) return orderAttachmentSlots(parsed);
 
   const text = `${weapon.type} ${weapon.name}`.toLowerCase();
   if (text.includes('hand cannon')) return ['muzzle', 'tech'];
   if (text.includes('shotgun')) return ['shotgun_muzzle', 'underbarrel', 'shotgun_magazine', 'stock'];
   if (text.includes('pistol')) return ['muzzle', 'light_magazine'];
-  if (text.includes('sniper') || text.includes('assault rifle') || text.includes('battle rifle') || text.includes('smg') || text.includes('lmg')) {
+  if (text.includes('sniper') || text.includes('assault rifle') || text.includes('battle rifle') || text.includes('smg') || text.includes('submachine gun') || text.includes('lmg')) {
     return ['muzzle', 'underbarrel', 'stock'];
   }
   return ['muzzle', 'underbarrel', 'stock'];
@@ -1706,15 +1751,40 @@ function guessAttachmentSlotsForWeapon(weapon) {
 
 function parseAttachmentSlots(slots) {
   if (!slots) return [];
-  const rawSlots = Array.isArray(slots)
-    ? slots
-    : typeof slots === 'object'
-      ? Object.values(slots).length ? Object.values(slots) : Object.keys(slots)
-      : `${slots}`.split(',');
-  return rawSlots
+  const rawSlots = [];
+
+  const collect = (value) => {
+    if (!value) return;
+    if (Array.isArray(value)) {
+      value.forEach(collect);
+      return;
+    }
+    if (typeof value === 'object') {
+      const nestedName = value.slot || value.type || value.name || value.id || value.modType || value.category;
+      if (nestedName) rawSlots.push(nestedName);
+      Object.values(value).forEach((entry) => {
+        if (entry !== nestedName) collect(entry);
+      });
+      return;
+    }
+    rawSlots.push(value);
+  };
+
+  collect(slots);
+
+  return orderAttachmentSlots(rawSlots
+    .flatMap((slot) => `${slot}`.split(','))
     .map((slot) => normalizeAttachmentCategory(`${slot}`))
     .filter(Boolean)
-    .filter((value, index, array) => array.indexOf(value) === index);
+    .filter((value, index, array) => array.indexOf(value) === index));
+}
+
+function orderAttachmentSlots(slots) {
+  return [...slots].sort((a, b) => {
+    const ai = SLOT_DISPLAY_ORDER.indexOf(a);
+    const bi = SLOT_DISPLAY_ORDER.indexOf(b);
+    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+  });
 }
 
 function isAttachmentCompatible(item, weapon, attachmentKind) {
@@ -1832,6 +1902,7 @@ function buildCraftPlan(selections) {
   const baseMap = new Map();
   const craftedMap = new Map();
   const trees = [];
+  const finalSelectionIds = new Set(selections.map((selection) => selection.itemId).filter(Boolean));
 
   const addToMap = (map, itemId, qty) => {
     map.set(itemId, (map.get(itemId) || 0) + qty);
@@ -1866,13 +1937,15 @@ function buildCraftPlan(selections) {
   };
 
   selections.forEach((selection) => {
-    const tree = visit(selection.itemId, selection.qty, true);
+    const tree = visit(selection.itemId, selection.qty, false);
     tree.label = selection.label;
     trees.push(tree);
   });
 
   const baseParts = sortedMapEntries(baseMap).map(([itemId, qty]) => ({ itemId, qty }));
-  const craftedIntermediates = sortedMapEntries(craftedMap).map(([itemId, qty]) => ({ itemId, qty }));
+  const craftedIntermediates = sortedMapEntries(craftedMap)
+    .filter(([itemId]) => !finalSelectionIds.has(itemId))
+    .map(([itemId, qty]) => ({ itemId, qty }));
   return { baseParts, craftedIntermediates, trees };
 }
 
